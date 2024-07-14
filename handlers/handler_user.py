@@ -235,7 +235,7 @@ async def confirm_order(callback: CallbackQuery, state: FSMContext, bot: Bot):
                 await bot.send_message(chat_id=admin_id,
                                        text=f'<b>Заказ № {order_info.id_order}:</b>\n'
                                             f'<i>Заказчик:</i> {user_info.name} / @{user_info.username}\n'
-                                            f'<i>Номер телефона</i>: {user_info.phone}'
+                                            f'<i>Номер телефона</i>: {user_info.phone}\n'
                                             f'<i>Мерч:</i> {merch_info.title}\n'
                                             f'<i>Адрес:</i> {order_info.address_delivery}',
                                        parse_mode='html')
