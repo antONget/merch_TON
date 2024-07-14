@@ -128,20 +128,22 @@ class TonHelper:
         pass
     
     async def get_balance(self, address: str):
-       async with aiohttp.ClientSession(headers={'User-Agent':UserAgent().random}) as session:
-            resp = await (await session.get(f"https://testnet.toncenter.com/api/v2/getWalletInformation?address={address}")).json()
+        async with aiohttp.ClientSession(headers={'User-Agent': UserAgent().random}) as session:
+            resp = await (await session.get(
+                f"https://testnet.toncenter.com/api/v2/getWalletInformation?address={address}")).json()
             try:
-                if resp['ok'] == True:
+                if resp['ok']:
                     return from_nano(int(resp['result']['balance']), TonCurrencyEnum.ton)
             except Exception as e:
                 return 'ERROR_'+str(e)
             return 'SMTH_WRONG', resp
-    
+
     async def check_valid_address(self, address: str):
         async with aiohttp.ClientSession(headers={'User-Agent':UserAgent().random}) as session:
-            resp = await (await session.get(f"https://testnet.toncenter.com/api/v2/getWalletInformation?address={address}")).json()
+            resp = await (await session.get(
+                f"https://testnet.toncenter.com/api/v2/getWalletInformation?address={address}")).json()
             try:
-                if resp['ok'] == True:
+                if resp['ok']:
                     return True
             except:
                 return False
