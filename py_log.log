@@ -1,0 +1,67 @@
+merch_bot.py:24 #INFO     [2024-07-14 19:37:09,492] - __main__ - Starting bot
+dispatcher.py:527 #INFO     [2024-07-14 19:37:11,155] - aiogram.dispatcher - Start polling
+dispatcher.py:341 #INFO     [2024-07-14 19:37:11,205] - aiogram.dispatcher - Run polling for bot @One_CryptoMerchBot id=7466494445 - 'one'
+handler_user.py:90 #INFO     [2024-07-14 19:37:12,462] - root - process_bay_merch: 1060834219
+dispatcher.py:172 #INFO     [2024-07-14 19:37:12,686] - aiogram.event - Update id=492071168 is handled. Duration 233 ms by bot id=7466494445
+keyboard_user.py:50 #INFO     [2024-07-14 19:37:17,346] - root - confirm_pay_ton
+dispatcher.py:172 #INFO     [2024-07-14 19:37:18,971] - aiogram.event - Update id=492071169 is handled. Duration 1952 ms by bot id=7466494445
+handler_user.py:139 #INFO     [2024-07-14 19:38:22,118] - root - 0.021185212
+handler_user.py:140 #INFO     [2024-07-14 19:38:22,118] - root - ('SMTH_WRONG', {'ok': False, 'result': 'Ratelimit exceed', 'code': 429})
+dispatcher.py:172 #INFO     [2024-07-14 19:38:22,118] - aiogram.event - Update id=492071170 is not handled. Duration 1391 ms by bot id=7466494445
+dispatcher.py:315 #ERROR    [2024-07-14 19:38:22,118] - aiogram.event - Cause exception while process update id=492071170 by bot id=7466494445
+TypeError: float() argument must be a string or a real number, not 'tuple'
+Traceback (most recent call last):
+  File "C:\Users\pavel\AppData\Local\Programs\Python\Python311\Lib\site-packages\aiogram\dispatcher\dispatcher.py", line 309, in _process_update
+    response = await self.feed_update(bot, update, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\pavel\AppData\Local\Programs\Python\Python311\Lib\site-packages\aiogram\dispatcher\dispatcher.py", line 158, in feed_update
+    response = await self.update.wrap_outer_middleware(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\pavel\AppData\Local\Programs\Python\Python311\Lib\site-packages\aiogram\dispatcher\middlewares\error.py", line 25, in __call__
+    return await handler(event, data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\pavel\AppData\Local\Programs\Python\Python311\Lib\site-packages\aiogram\dispatcher\middlewares\user_context.py", line 49, in __call__
+    return await handler(event, data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\pavel\AppData\Local\Programs\Python\Python311\Lib\site-packages\aiogram\fsm\middleware.py", line 42, in __call__
+    return await handler(event, data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\pavel\AppData\Local\Programs\Python\Python311\Lib\site-packages\aiogram\dispatcher\event\telegram.py", line 121, in trigger
+    return await wrapped_inner(event, kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\pavel\AppData\Local\Programs\Python\Python311\Lib\site-packages\aiogram\dispatcher\event\handler.py", line 43, in call
+    return await wrapped()
+           ^^^^^^^^^^^^^^^
+  File "C:\Users\pavel\AppData\Local\Programs\Python\Python311\Lib\site-packages\aiogram\dispatcher\dispatcher.py", line 276, in _listen_update
+    return await self.propagate_event(update_type=update_type, event=event, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\pavel\AppData\Local\Programs\Python\Python311\Lib\site-packages\aiogram\dispatcher\router.py", line 142, in propagate_event
+    return await observer.wrap_outer_middleware(_wrapped, event=event, data=kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\pavel\AppData\Local\Programs\Python\Python311\Lib\site-packages\aiogram\dispatcher\router.py", line 137, in _wrapped
+    return await self._propagate_event(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\pavel\AppData\Local\Programs\Python\Python311\Lib\site-packages\aiogram\dispatcher\router.py", line 170, in _propagate_event
+    response = await router.propagate_event(update_type=update_type, event=event, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\pavel\AppData\Local\Programs\Python\Python311\Lib\site-packages\aiogram\dispatcher\router.py", line 142, in propagate_event
+    return await observer.wrap_outer_middleware(_wrapped, event=event, data=kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\pavel\AppData\Local\Programs\Python\Python311\Lib\site-packages\aiogram\dispatcher\router.py", line 137, in _wrapped
+    return await self._propagate_event(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\pavel\AppData\Local\Programs\Python\Python311\Lib\site-packages\aiogram\dispatcher\router.py", line 162, in _propagate_event
+    response = await observer.trigger(event, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\pavel\AppData\Local\Programs\Python\Python311\Lib\site-packages\aiogram\dispatcher\event\telegram.py", line 121, in trigger
+    return await wrapped_inner(event, kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\pavel\AppData\Local\Programs\Python\Python311\Lib\site-packages\aiogram\dispatcher\event\handler.py", line 43, in call
+    return await wrapped()
+           ^^^^^^^^^^^^^^^
+  File "c:\Users\pavel\OneDrive\Рабочий стол\avito_projects\merch_TON\handlers\handler_user.py", line 143, in process_paying
+    bot_balance = float(data['bot_balance'])
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: float() argument must be a string or a real number, not 'tuple'
+dispatcher.py:554 #INFO     [2024-07-14 19:38:28,594] - aiogram.dispatcher - Polling stopped
+dispatcher.py:359 #INFO     [2024-07-14 19:38:28,852] - aiogram.dispatcher - Polling stopped for bot @One_CryptoMerchBot id=7466494445 - 'one'

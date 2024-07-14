@@ -6,11 +6,16 @@ from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup, default_state
 
 from keyboards.keyboard_user import keyboards_main, keyboard_bay_merch, keyboards_get_contact, keyboard_confirm_phone, \
-    keyboard_confirm_order
+    keyboard_confirm_order, keyboard_confirm_pay
 from config_data.config import Config, load_config
 from database.requests import get_all_merch, get_merch, get_all_order, add_order, add_user, update_name_user,\
-    update_phone_user, update_address_delivery_user, update_address_delivery_order, get_user, get_order
+    update_phone_user, update_address_delivery_user, update_address_delivery_order, get_user, get_order, update_user_ton_addr
+
+
 from filter.filter import validate_russian_phone_number
+
+from cryptoh.CryptoHelper import ton_helper
+
 
 import logging
 import asyncio
@@ -26,6 +31,10 @@ class Merch(StatesGroup):
     phone = State()
     address_delivery = State()
     count_merch = State()
+    id_merch = State()
+    ton_addrs = State()
+    user_balance = State()
+    bot_balance = State()
 
 
 @router.message(CommandStart())
@@ -82,7 +91,67 @@ async def process_bay_merch(callback: CallbackQuery, state: FSMContext):
     await state.set_state(default_state)
     id_merch = int(callback.data.split('_')[1])
     await state.update_data(id_merch=id_merch)
-    pay = True
+    await callback.message.answer('Пришлите ваш кошелек для проверки списания средств')
+    await state.set_state(Merch.ton_addrs)
+
+
+@router.message(Merch.ton_addrs)
+async def process_ton_addrs(message: Message, state: FSMContext):
+    """
+    Проверка валидности кошелька
+    :param message:
+    :param state:
+    :return:
+    """
+
+    data = await state.get_data()
+
+
+    if await ton_helper.check_valid_address(message.text):
+        await message.answer('Кошелек валиден. Оплатите товар по адресу: <code>EQAFe_UHOda_RqEn5TSpijG0ZeSN6r7vqtSE36yzMnumM_k5</code>',
+                             parse_mode='html',
+                             reply_markup=keyboard_confirm_pay(data['id_merch']))
+        await state.set_state(default_state)
+        await state.update_data(ton_addrs=message.text)
+        await update_user_ton_addr(user_id=message.chat.id, user_addr=message.text)
+        await state.update_data(user_balance = await ton_helper.get_balance(message.text))
+        
+        await asyncio.sleep(2)
+
+        await state.update_data(bot_balance = await ton_helper.get_balance('EQAFe_UHOda_RqEn5TSpijG0ZeSN6r7vqtSE36yzMnumM_k5'))
+    else:
+        await message.answer('Кошелек не валиден! Попробуйте прислать еще раз')
+
+
+@router.callback_query(F.data.startswith('confirm_pay_for_'))
+async def process_paying(callback: CallbackQuery, state: FSMContext):
+    data = await state.get_data()
+    pay = None
+    id_merch = int(data['id_merch'])
+    try:user_balance_now = float(await ton_helper.get_balance(data['ton_addrs']))
+    except:logging.info(f'error')
+    
+    await asyncio.sleep(2)
+
+    try:bot_balance_now = float(await ton_helper.get_balance('EQAFe_UHOda_RqEn5TSpijG0ZeSN6r7vqtSE36yzMnumM_k5'))
+    except:logging.info(f'error')
+
+    logging.info(data['user_balance'])
+    logging.info(data['bot_balance'])
+
+    user_balance = float(data['user_balance'])
+    bot_balance = float(data['bot_balance'])
+
+    merch = await get_merch(id_merch)
+
+    # Заменить на merch.amount тестовое число тон
+    
+    if (user_balance - 0.05 <= user_balance_now) and (bot_balance + 0.05 >= bot_balance_now):
+        pay = True
+    else:
+        pay = False
+
+    # pay = True
     if pay:
         await callback.message.answer(text='Оплата прошла успешно')
         count_order = len(await get_all_order()) + 1
@@ -103,6 +172,13 @@ async def process_bay_merch(callback: CallbackQuery, state: FSMContext):
     else:
         await callback.message.answer(text='Оплата не прошла. Повторите попытку')
         await state.set_state(default_state)
+
+
+@router.callback_query(F.data.startswith('cancel_pay_for_'))
+async def cancel_pay_for(callback: CallbackQuery, state: FSMContext):
+    await callback.answer('Отменено', show_alert=True)
+    await state.clear()
+
 
 
 @router.message(F.text, Merch.username)

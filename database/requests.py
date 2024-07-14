@@ -2,18 +2,18 @@ from database.models import User, Merch, Order
 from database.models import async_session
 import logging
 from dataclasses import dataclass
-from sqlalchemy import select
+from sqlalchemy import select, update
 
 
 # МЕРЧ
-async def get_all_merch():
+async def get_all_merch() -> list[Merch]:
     """
     Получаем всю информацию о товарах из БД
     :return:
     """
     logging.info("get_all_merch")
     async with async_session() as session:
-        merch: Merch = (await session.scalars(select(Merch))).all()
+        merch = (await session.scalars(select(Merch))).all()
         return merch
 
 
@@ -303,8 +303,8 @@ class UserStatus:
 
 async def update_user_ton_addr(user_id: int, user_addr: str):
     async with async_session() as session:
-        user: User = await session.scalar(select(User).where(User.id == user_id))
+        user: User = await session.scalar(select(User).where(User.id_tg == user_id))
         if user:
-            user.crypto_ton_addr = user_addr
+            user.ton_address = user_addr
             await session.commit()
 
