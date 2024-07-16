@@ -14,6 +14,24 @@ def keyboards_main() -> ReplyKeyboardMarkup:
     return keyboard
 
 
+def keyboard_create_merch():
+    logging.info("keyboard_create_merch")
+    button_1 = InlineKeyboardButton(text='hoodie',
+                                    callback_data='custom_hoodie')
+    button_2 = InlineKeyboardButton(text='cup',
+                                    callback_data='custom_cup')
+    keyboard = InlineKeyboardMarkup(inline_keyboard=[[button_1], [button_2]],)
+    return keyboard
+
+
+def keyboard_pay_custom():
+    logging.info("keyboard_pay_custom")
+    button_1 = InlineKeyboardButton(text='Оплатить',
+                                    callback_data='create_pay')
+    keyboard = InlineKeyboardMarkup(inline_keyboard=[[button_1]])
+    return keyboard
+
+
 def keyboards_card_merch_new(list_merch: list, block: int):
     logging.info("keyboards_card_merch")
     kb_builder = InlineKeyboardBuilder()
@@ -31,41 +49,6 @@ def keyboards_card_merch_new(list_merch: list, block: int):
     kb_builder.row(*buttons, width=1)
     kb_builder.row(button_back, button_next)
     return kb_builder.as_markup()
-
-# def keyboards_card_merch(list_merch: list, back: int, forward: int, count: int):
-#     logging.info("keyboards_card_merch")
-#     # проверка чтобы не ушли в минус
-#     if back < 0:
-#         back = 0
-#         forward = 2
-#     # считаем сколько всего блоков по заданному количество элементов в блоке
-#     count_users = len(list_merch)
-#     whole = count_users // count
-#     remains = count_users % count
-#     max_forward = whole + 1
-#     # если есть остаток, то увеличиваем количество блоков на один, чтобы показать остаток
-#     if remains:
-#         max_forward = whole + 2
-#     if forward > max_forward:
-#         forward = max_forward
-#         back = forward - 2
-#     kb_builder = InlineKeyboardBuilder()
-#     buttons = []
-#
-#     for merch in list_merch[back*count:(forward-1)*count]:
-#
-#         text = f'Купить'
-#         button = f'bay_{merch.id_merch}'
-#         buttons.append(InlineKeyboardButton(
-#             text=text,
-#             callback_data=button))
-#     button_back = InlineKeyboardButton(text='<<',
-#                                        callback_data=f'back_{str(back)}')
-#     button_next = InlineKeyboardButton(text='>>',
-#                                        callback_data=f'forward_{str(forward)}')
-#     kb_builder.row(*buttons, width=1)
-#     kb_builder.row(button_back, button_next)
-#     return kb_builder.as_markup()
 
 
 def keyboard_bay_merch(id_merch):
