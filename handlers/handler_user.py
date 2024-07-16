@@ -258,7 +258,7 @@ async def process_paying(callback: CallbackQuery, state: FSMContext):
     invoice_id = (await get_user(callback.from_user.id)).invoice_id
     status = await x_roket_pay.check_invoice_payed(invoice_id)
     logging.info(f"get_invoice_{invoice_id}_status: {status} to {callback.from_user.id}")
-    if status == XRocketPayStatus.paid:
+    if status:
         pay = True
         await update_user_data(**{
             'id_tg': callback.message.chat.id,
