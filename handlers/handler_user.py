@@ -107,9 +107,9 @@ async def get_file_custom(message: Message, bot: Bot, state: FSMContext):
             await message.answer(text='Фото не отправлено, обратитесь в поддержку')
     if message.document:
         try:
-            await bot.send_photo(chat_id=config.tg_bot.admin_ids,
-                                 photo=message.photo[-1].file_id,
-                                 caption=f'Пользователь @{message.from_user.username} прислал фото для кастомного мерча')
+            await bot.send_document(chat_id=config.tg_bot.admin_ids,
+                                    document=message.document.file_id,
+                                    caption=f'Пользователь @{message.from_user.username} прислал файл для кастомного мерча')
             await message.answer(text='Фото успешно отправлено менеджеру, осталось оплатить',
                                  reply_markup=keyboard_pay_custom())
         except:
