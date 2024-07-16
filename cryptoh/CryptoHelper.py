@@ -75,7 +75,7 @@ class XRocketPay:
 
         if data['success']:
             if data['data']['status'] == XRocketPayStatus.paid:
-                await self.delete_invoice(invoice_id)
+                # await self.delete_invoice(invoice_id)
                 return True
             
         return False
