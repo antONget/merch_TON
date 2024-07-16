@@ -92,7 +92,7 @@ async def process_custom(callback: CallbackQuery, state: FSMContext):
     await state.set_state(Merch.custom)
 
 
-@router.message(or_f(F.DOCUMENT, F.PHOTO), StateFilter(Merch.custom))
+@router.message(or_f(F.document, F.photo), StateFilter(Merch.custom))
 async def get_file_custom(message: Message, bot: Bot, state: FSMContext):
     logging.info(f'get_file_custom: {message.chat.id}')
     if message.photo:
