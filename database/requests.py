@@ -1,8 +1,15 @@
 from database.models import User, Merch, Order
 from database.models import async_session
+
+
 import logging
-from dataclasses import dataclass
 from sqlalchemy import select, update
+
+# uncomment for testing 
+# from models import User, Merch, Order
+# from models import async_session
+
+
 
 
 # МЕРЧ
@@ -290,21 +297,22 @@ async def get_user_ton_addr_by_id(user_id: int):
 
 '''       UPDATE       '''
 
-@dataclass
-class UserStatus:
-    passed = "None"
-    payed = "PAYED"
-    not_payed = "NOT_PAYED"
-    on_work = "ON_WORK"
 
 
 
 
+async def update_user_data(**data):
+    '''
+    Update any data in User:
+        id_tg : user_tg_id 
+        any datas
 
-async def update_user_ton_addr(user_id: int, user_addr: str):
+    '''
     async with async_session() as session:
-        user: User = await session.scalar(select(User).where(User.id_tg == user_id))
-        if user:
-            user.ton_address = user_addr
-            await session.commit()
+        await session.execute(update(User).where(User.id_tg == data['id_tg']).values(data))
+        await session.commit()
 
+
+# import asyncio
+
+# asyncio.run(update_user_data(**{'id_tg':1060834219, 'invoice_id':0}))

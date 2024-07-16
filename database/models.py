@@ -1,4 +1,4 @@
-from sqlalchemy import String, Integer, Float
+from sqlalchemy import String, Integer, Float, BigInteger
 from sqlalchemy.orm import Mapped, mapped_column, DeclarativeBase
 from sqlalchemy.ext.asyncio import AsyncAttrs, async_sessionmaker, create_async_engine
 
@@ -17,12 +17,13 @@ class Base(AsyncAttrs, DeclarativeBase):
 class User(Base):
     __tablename__ = 'users'
 
-    id_tg: Mapped[int] = mapped_column(primary_key=True)
+    id_tg: Mapped[int] = mapped_column(BigInteger, primary_key=True)
     username: Mapped[str] = mapped_column(String(20))
     name: Mapped[str] = mapped_column(String(20))
     phone: Mapped[str] = mapped_column(String(15))
     address_delivery: Mapped[str] = mapped_column(String(100))
-    ton_address: Mapped[str] = mapped_column(String)
+    invoice_id: Mapped[int] = mapped_column(Integer, default=0)
+    status: Mapped[str] = mapped_column(String(20), default='None')
 
 
 class Merch(Base):

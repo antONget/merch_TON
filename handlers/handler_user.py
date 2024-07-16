@@ -10,9 +10,10 @@ from keyboards.keyboard_user import keyboards_main, keyboard_bay_merch, keyboard
 from config_data.config import Config, load_config
 from database.requests import get_all_merch, get_merch, get_all_order, add_order, add_user, update_name_user,\
     update_phone_user, update_address_delivery_user, update_address_delivery_order, get_user, get_order,\
-    update_user_ton_addr
+    update_user_data
 from filter.filter import validate_russian_phone_number
-from cryptoh.CryptoHelper import ton_helper
+
+from cryptoh.CryptoHelper import XRocketPayStatus, XRocketPayCurrency, x_roket_pay
 
 
 import logging
@@ -30,9 +31,6 @@ class Merch(StatesGroup):
     address_delivery = State()
     count_merch = State()
     id_merch = State()
-    ton_addrs = State()
-    user_balance = State()
-    bot_balance = State()
 
 
 @router.message(CommandStart())
@@ -88,69 +86,48 @@ async def process_bay_merch(callback: CallbackQuery, state: FSMContext):
     logging.info(f'process_bay_merch: {callback.message.chat.id}')
     await state.set_state(default_state)
     id_merch = int(callback.data.split('_')[1])
+    
+    merch = await get_merch(id_merch)
+
     await state.update_data(id_merch=id_merch)
-    await callback.message.answer('Пришлите ваш кошелек для проверки списания средств')
-    await state.set_state(Merch.ton_addrs)
+
+    # REPLACE TEST AMOUNT TO amount=merch.amount
+
+    invoice_id, link = await x_roket_pay.create_incoice(0.05, currency=XRocketPayCurrency.ton)
 
 
-@router.message(Merch.ton_addrs)
-async def process_ton_addrs(message: Message, state: FSMContext):
-    """
-    Проверка валидности кошелька
-    :param message:
-    :param state:
-    :return:
-    """
-    data = await state.get_data()
-    if await ton_helper.check_valid_address(message.text):
-        await message.answer('Кошелек валиден. Оплатите товар по адресу:'
-                             ' <code>EQAFe_UHOda_RqEn5TSpijG0ZeSN6r7vqtSE36yzMnumM_k5</code>',
-                             parse_mode='html',
-                             reply_markup=keyboard_confirm_pay(data['id_merch']))
-        await state.set_state(default_state)
-        await state.update_data(ton_addrs=message.text)
-        await update_user_ton_addr(user_id=message.chat.id, user_addr=message.text)
-        await state.update_data(user_balance=await ton_helper.get_balance(message.text))
-        await asyncio.sleep(2)
-        await state.update_data(
-            bot_balance=await ton_helper.get_balance('EQAFe_UHOda_RqEn5TSpijG0ZeSN6r7vqtSE36yzMnumM_k5'))
-    else:
-        await message.answer('Кошелек не валиден! Попробуйте прислать еще раз')
+    await update_user_data(**{
+        'id_tg': callback.message.chat.id,
+        'invoice_id': invoice_id,
+        'status': XRocketPayStatus.active
+    })
+    
+    await callback.message.answer(f'Оплатите товар по <a href="{link}">ссылке</a>',
+                                  reply_markup=keyboard_confirm_pay(id_merch),
+                                  parse_mode='html')
 
 
 @router.callback_query(F.data.startswith('confirm_pay_for_'))
 async def process_paying(callback: CallbackQuery, state: FSMContext):
+    logging.info('Processing_paying')
+    await callback.answer('')
+
     user_dict[callback.message.chat.id] = await state.get_data()
-    pay = None
     id_merch = user_dict[callback.message.chat.id]['id_merch']
-    try:
-        user_balance_now = float(await ton_helper.get_balance(user_dict[callback.message.chat.id]['ton_addrs']))
-    except:
-        logging.info(f'error')
-    
-    await asyncio.sleep(2)
 
-    try:
-        bot_balance_now = float(await ton_helper.get_balance('EQAFe_UHOda_RqEn5TSpijG0ZeSN6r7vqtSE36yzMnumM_k5'))
-    except:
-        logging.info(f'error')
-
-    logging.info(user_dict[callback.message.chat.id]['user_balance'])
-    logging.info(user_dict[callback.message.chat.id]['bot_balance'])
-
-    user_balance = float(user_dict[callback.message.chat.id]['user_balance'])
-    bot_balance = float(user_dict[callback.message.chat.id]['bot_balance'])
-
-    merch = await get_merch(id_merch)
-
-    # Заменить на merch.amount тестовое число тон
-    
-    if (user_balance - 0.05 <= user_balance_now) and (bot_balance + 0.05 >= bot_balance_now):
+    invoice_id = (await get_user(callback.from_user.id)).invoice_id
+    status = await x_roket_pay.check_invoice_payed(invoice_id)
+    logging.info(f"get_invoice_{invoice_id}_status: {status} to {callback.from_user.id}")
+    if status == XRocketPayStatus.paid:
         pay = True
+        await update_user_data(**{
+            'id_tg': callback.message.chat.id,
+            'invoice_id': 0,
+            'status' : XRocketPayStatus.passed
+        })
+        
     else:
         pay = False
-
-    # pay = True
     if pay:
         await callback.message.answer(text='Оплата прошла успешно')
         count_order = len(await get_all_order()) + 1

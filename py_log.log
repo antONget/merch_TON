@@ -1,0 +1,77 @@
+merch_bot.py:24 #INFO     [2024-07-16 14:50:19,670] - __main__ - Starting bot
+dispatcher.py:527 #INFO     [2024-07-16 14:50:19,965] - aiogram.dispatcher - Start polling
+dispatcher.py:341 #INFO     [2024-07-16 14:50:20,015] - aiogram.dispatcher - Run polling for bot @One_CryptoMerchBot id=7466494445 - 'Merch Bot'
+handler_user.py:41 #INFO     [2024-07-16 14:51:00,664] - root - process_start_command_user 1060834219
+requests.py:102 #INFO     [2024-07-16 14:51:00,664] - root - add_user: 1060834219
+keyboard_user.py:6 #INFO     [2024-07-16 14:51:00,669] - root - keyboards_main
+handler_user.py:68 #INFO     [2024-07-16 14:51:00,899] - root - user_subscription: 1060834219
+requests.py:21 #INFO     [2024-07-16 14:51:00,899] - root - get_all_merch
+keyboard_user.py:14 #INFO     [2024-07-16 14:51:01,015] - root - keyboard_confirm_cantact_date
+keyboard_user.py:14 #INFO     [2024-07-16 14:51:01,247] - root - keyboard_confirm_cantact_date
+keyboard_user.py:14 #INFO     [2024-07-16 14:51:01,554] - root - keyboard_confirm_cantact_date
+dispatcher.py:172 #INFO     [2024-07-16 14:51:01,733] - aiogram.event - Update id=492071269 is handled. Duration 1063 ms by bot id=7466494445
+handler_user.py:86 #INFO     [2024-07-16 14:51:19,651] - root - process_bay_merch: 1060834219
+requests.py:33 #INFO     [2024-07-16 14:51:19,651] - root - get_merch
+dispatcher.py:172 #INFO     [2024-07-16 14:51:19,881] - aiogram.event - Update id=492071270 is not handled. Duration 219 ms by bot id=7466494445
+dispatcher.py:315 #ERROR    [2024-07-16 14:51:19,881] - aiogram.event - Cause exception while process update id=492071270 by bot id=7466494445
+ContentTypeError: 0, message='Attempt to decode JSON with unexpected mimetype: text/html; charset=utf-8', url=URL('https://dev-pay.ton-rocket.com/tg-invoices')
+Traceback (most recent call last):
+  File "C:\Users\pavel\AppData\Local\Programs\Python\Python311\Lib\site-packages\aiogram\dispatcher\dispatcher.py", line 309, in _process_update
+    response = await self.feed_update(bot, update, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\pavel\AppData\Local\Programs\Python\Python311\Lib\site-packages\aiogram\dispatcher\dispatcher.py", line 158, in feed_update
+    response = await self.update.wrap_outer_middleware(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\pavel\AppData\Local\Programs\Python\Python311\Lib\site-packages\aiogram\dispatcher\middlewares\error.py", line 25, in __call__
+    return await handler(event, data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\pavel\AppData\Local\Programs\Python\Python311\Lib\site-packages\aiogram\dispatcher\middlewares\user_context.py", line 49, in __call__
+    return await handler(event, data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\pavel\AppData\Local\Programs\Python\Python311\Lib\site-packages\aiogram\fsm\middleware.py", line 42, in __call__
+    return await handler(event, data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\pavel\AppData\Local\Programs\Python\Python311\Lib\site-packages\aiogram\dispatcher\event\telegram.py", line 121, in trigger
+    return await wrapped_inner(event, kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\pavel\AppData\Local\Programs\Python\Python311\Lib\site-packages\aiogram\dispatcher\event\handler.py", line 43, in call
+    return await wrapped()
+           ^^^^^^^^^^^^^^^
+  File "C:\Users\pavel\AppData\Local\Programs\Python\Python311\Lib\site-packages\aiogram\dispatcher\dispatcher.py", line 276, in _listen_update
+    return await self.propagate_event(update_type=update_type, event=event, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\pavel\AppData\Local\Programs\Python\Python311\Lib\site-packages\aiogram\dispatcher\router.py", line 142, in propagate_event
+    return await observer.wrap_outer_middleware(_wrapped, event=event, data=kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\pavel\AppData\Local\Programs\Python\Python311\Lib\site-packages\aiogram\dispatcher\router.py", line 137, in _wrapped
+    return await self._propagate_event(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\pavel\AppData\Local\Programs\Python\Python311\Lib\site-packages\aiogram\dispatcher\router.py", line 170, in _propagate_event
+    response = await router.propagate_event(update_type=update_type, event=event, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\pavel\AppData\Local\Programs\Python\Python311\Lib\site-packages\aiogram\dispatcher\router.py", line 142, in propagate_event
+    return await observer.wrap_outer_middleware(_wrapped, event=event, data=kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\pavel\AppData\Local\Programs\Python\Python311\Lib\site-packages\aiogram\dispatcher\router.py", line 137, in _wrapped
+    return await self._propagate_event(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\pavel\AppData\Local\Programs\Python\Python311\Lib\site-packages\aiogram\dispatcher\router.py", line 162, in _propagate_event
+    response = await observer.trigger(event, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\pavel\AppData\Local\Programs\Python\Python311\Lib\site-packages\aiogram\dispatcher\event\telegram.py", line 121, in trigger
+    return await wrapped_inner(event, kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\pavel\AppData\Local\Programs\Python\Python311\Lib\site-packages\aiogram\dispatcher\event\handler.py", line 43, in call
+    return await wrapped()
+           ^^^^^^^^^^^^^^^
+  File "c:\Users\pavel\OneDrive\Рабочий стол\avito_projects\merch_ton\merch_TON_2\handlers\handler_user.py", line 96, in process_bay_merch
+    invoice_id, link = await x_roket_pay.create_incoice(0.05, currency=XRocketPayCurrency.ton)
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "c:\Users\pavel\OneDrive\Рабочий стол\avito_projects\merch_ton\merch_TON_2\cryptoh\CryptoHelper.py", line 53, in create_incoice
+    data = await resp.json()
+           ^^^^^^^^^^^^^^^^^
+  File "C:\Users\pavel\AppData\Local\Programs\Python\Python311\Lib\site-packages\aiohttp\client_reqrep.py", line 1176, in json
+    raise ContentTypeError(
+aiohttp.client_exceptions.ContentTypeError: 0, message='Attempt to decode JSON with unexpected mimetype: text/html; charset=utf-8', url=URL('https://dev-pay.ton-rocket.com/tg-invoices')
+dispatcher.py:554 #INFO     [2024-07-16 14:53:34,423] - aiogram.dispatcher - Polling stopped
+dispatcher.py:359 #INFO     [2024-07-16 14:53:34,686] - aiogram.dispatcher - Polling stopped for bot @One_CryptoMerchBot id=7466494445 - 'Merch Bot'
