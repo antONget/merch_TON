@@ -273,18 +273,18 @@ async def process_paying(callback: CallbackQuery, state: FSMContext):
         count_order = len(await get_all_order()) + 1
         info_merch = await get_merch(id_merch=id_merch)
         await state.update_data(id_order=count_order)
-        if await get_user(id_tg=callback.message.chat.id):
-            user = await get_user(id_tg=callback.message.chat.id)
-            data = {"id_order": count_order, "id_tg": callback.message.chat.id, "id_merch": id_merch, "count": 1,
-                    "cost": info_merch.amount, "address_delivery": user.address_delivery}
-            await add_order(data=data)
-            await get_address_delivery_1(message=callback.message, state=state)
-        else:
-            data = {"id_order": count_order, "id_tg": callback.message.chat.id, "id_merch": id_merch, "count": 1,
-                    "cost": info_merch.amount, "address_delivery": "None"}
-            await add_order(data=data)
-            await callback.message.answer(text=f'Как вас зовут?')
-            await state.set_state(Merch.username)
+        # if await get_user(id_tg=callback.message.chat.id):
+        #     user = await get_user(id_tg=callback.message.chat.id)
+        #     data = {"id_order": count_order, "id_tg": callback.message.chat.id, "id_merch": id_merch, "count": 1,
+        #             "cost": info_merch.amount, "address_delivery": user.address_delivery}
+        #     await add_order(data=data)
+        #     await get_address_delivery_1(message=callback.message, state=state)
+        # else:
+        data = {"id_order": count_order, "id_tg": callback.message.chat.id, "id_merch": id_merch, "count": 1,
+                "cost": info_merch.amount, "address_delivery": "None"}
+        await add_order(data=data)
+        await callback.message.answer(text=f'Как вас зовут?')
+        await state.set_state(Merch.username)
     else:
         await callback.message.answer(text='Оплата не прошла. Повторите попытку')
         await state.set_state(default_state)
@@ -294,7 +294,6 @@ async def process_paying(callback: CallbackQuery, state: FSMContext):
 async def cancel_pay_for(callback: CallbackQuery, state: FSMContext):
     await callback.answer('Отменено', show_alert=True)
     await state.clear()
-
 
 
 @router.message(F.text, Merch.username)
