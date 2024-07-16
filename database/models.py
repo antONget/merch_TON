@@ -22,7 +22,8 @@ class User(Base):
     name: Mapped[str] = mapped_column(String(20))
     phone: Mapped[str] = mapped_column(String(15))
     address_delivery: Mapped[str] = mapped_column(String(100))
-    ton_address: Mapped[str] = mapped_column(String)
+    invoice_id: Mapped[int] = mapped_column(Integer, default=0)
+    status: Mapped[str] = mapped_column(String(20), default='None')
 
 
 class Merch(Base):

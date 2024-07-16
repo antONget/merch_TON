@@ -6,13 +6,13 @@ from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup, default_state
 
 from keyboards.keyboard_user import keyboards_main, keyboards_get_contact, keyboard_confirm_phone, \
-    keyboard_confirm_order, keyboard_confirm_pay,keyboards_card_merch_new
+    keyboard_confirm_order, keyboard_confirm_pay, keyboards_card_merch_new
 from config_data.config import Config, load_config
 from database.requests import get_merch, get_all_order, add_order, add_user, update_name_user,\
     update_phone_user, update_address_delivery_user, update_address_delivery_order, get_user, get_order,\
-    update_user_ton_addr, get_merch_category
+    get_merch_category, update_user_data
 from filter.filter import validate_russian_phone_number
-from cryptoh.CryptoHelper import ton_helper
+from cryptoh.CryptoHelper import XRocketPayStatus, XRocketPayCurrency, x_roket_pay
 
 
 import logging
@@ -30,9 +30,6 @@ class Merch(StatesGroup):
     address_delivery = State()
     count_merch = State()
     id_merch = State()
-    ton_addrs = State()
-    user_balance = State()
-    bot_balance = State()
 
 
 @router.message(CommandStart())
@@ -44,7 +41,7 @@ async def process_start_command_user(message: Message, state: FSMContext) -> Non
     await state.set_state(default_state)
 
     data = {"id_tg": message.chat.id, "username": message.from_user.username, "name": message.from_user.first_name,
-            "phone": "None", "address_delivery": "None", "ton_address": "None"}
+            "phone": "None", "address_delivery": "None"}
     await add_user(data=data)
     await message.answer(text=f'Приветственное сообщение. Рассказ о том что может этот бот и краткая инструкция'
                               f' как им пользоваться.\n'
@@ -127,9 +124,7 @@ async def process_forward(callback: CallbackQuery, state: FSMContext):
         await callback.message.edit_media(media=InputMediaPhoto(media=list_merch[num_block].image),
                                           reply_markup=keyboard)
     except:
-        print('ERROR')
-        # await callback.message.edit_media(media=InputMediaPhoto(media=list_merch[num_block].image),
-        #                                   reply_markup=keyboard)
+        logging.info('ERROR')
 
 
 # <<
@@ -157,23 +152,7 @@ async def process_back(callback: CallbackQuery, state: FSMContext) -> None:
         await callback.message.edit_media(media=InputMediaPhoto(media=list_merch[num_block].image),
                                           reply_markup=keyboard)
     except:
-        print('ERROR')
-        # await callback.message.edit_media(media=InputMediaPhoto(media=list_merch[num_block].image),
-        #                                   reply_markup=keyboard)
-
-
-# async def merch_show(message: Message, models_merch: Merch):
-#     """
-#     Выгрузка карточек товара пользователю
-#     """
-#     logging.info(f'user_subscription: {message.from_user.id}')
-#     models_merch = await get_all_merch()
-#     for merch in models_merch:
-#         await asyncio.sleep(0.1)
-#         await message.answer_photo(photo=merch.image,
-#                                    caption=f'<b>{merch.title}</b>: <i>{merch.amount}</i> TON',
-#                                    reply_markup=keyboard_bay_merch(merch.id_merch),
-#                                    parse_mode='html')
+        logging.info('ERROR')
 
 
 @router.callback_query(F.data.startswith('bay_'))
@@ -188,68 +167,67 @@ async def process_bay_merch(callback: CallbackQuery, state: FSMContext):
     await state.set_state(default_state)
     id_merch = int(callback.data.split('_')[1])
     await state.update_data(id_merch=id_merch)
-    await callback.message.answer('Пришлите ваш кошелек для проверки списания средств')
-    await state.set_state(Merch.ton_addrs)
+    # !!! REPLACE TEST AMOUNT TO
+    merch = await get_merch(id_merch=id_merch)
+    amount = merch.amount / 1000
+    invoice_id, link = await x_roket_pay.create_incoice(amount, currency=XRocketPayCurrency.ton)
+
+    await update_user_data(**{
+        'id_tg': callback.message.chat.id,
+        'invoice_id': invoice_id,
+        'status': XRocketPayStatus.active
+    })
+
+    await callback.message.answer(f'Оплатите товар по <a href="{link}">ссылке</a>',
+                                  reply_markup=keyboard_confirm_pay(id_merch),
+                                  parse_mode='html')
 
 
-@router.message(Merch.ton_addrs)
-async def process_ton_addrs(message: Message, state: FSMContext):
-    """
-    Проверка валидности кошелька
-    :param message:
-    :param state:
-    :return:
-    """
-    data = await state.get_data()
-    if await ton_helper.check_valid_address(message.text):
-        await message.answer('Кошелек валиден. Оплатите товар по адресу:'
-                             ' <code>EQAFe_UHOda_RqEn5TSpijG0ZeSN6r7vqtSE36yzMnumM_k5</code>',
-                             parse_mode='html',
-                             reply_markup=keyboard_confirm_pay(data['id_merch']))
-        await state.set_state(default_state)
-        await state.update_data(ton_addrs=message.text)
-        await update_user_ton_addr(user_id=message.chat.id, user_addr=message.text)
-        await state.update_data(user_balance=await ton_helper.get_balance(message.text))
-        await asyncio.sleep(2)
-        await state.update_data(
-            bot_balance=await ton_helper.get_balance('EQAFe_UHOda_RqEn5TSpijG0ZeSN6r7vqtSE36yzMnumM_k5'))
-    else:
-        await message.answer('Кошелек не валиден! Попробуйте прислать еще раз')
+# @router.message(Merch.ton_addrs)
+# async def process_ton_addrs(message: Message, state: FSMContext):
+#     """
+#     Проверка валидности кошелька
+#     :param message:
+#     :param state:
+#     :return:
+#     """
+#     data = await state.get_data()
+#     if await ton_helper.check_valid_address(message.text):
+#         await message.answer('Кошелек валиден. Оплатите товар по адресу:'
+#                              ' <code>EQAFe_UHOda_RqEn5TSpijG0ZeSN6r7vqtSE36yzMnumM_k5</code>',
+#                              parse_mode='html',
+#                              reply_markup=keyboard_confirm_pay(data['id_merch']))
+#         await state.set_state(default_state)
+#         await state.update_data(ton_addrs=message.text)
+#         await update_user_ton_addr(user_id=message.chat.id, user_addr=message.text)
+#         await state.update_data(user_balance=await ton_helper.get_balance(message.text))
+#         await asyncio.sleep(2)
+#         await state.update_data(
+#             bot_balance=await ton_helper.get_balance('EQAFe_UHOda_RqEn5TSpijG0ZeSN6r7vqtSE36yzMnumM_k5'))
+#     else:
+#         await message.answer('Кошелек не валиден! Попробуйте прислать еще раз')
 
 
 @router.callback_query(F.data.startswith('confirm_pay_for_'))
 async def process_paying(callback: CallbackQuery, state: FSMContext):
+    logging.info('Processing_paying')
+    await callback.answer()
     user_dict[callback.message.chat.id] = await state.get_data()
-    pay = None
     id_merch = user_dict[callback.message.chat.id]['id_merch']
-    try:
-        user_balance_now = float(await ton_helper.get_balance(user_dict[callback.message.chat.id]['ton_addrs']))
-    except:
-        logging.info(f'error')
-    
-    await asyncio.sleep(2)
 
-    try:
-        bot_balance_now = float(await ton_helper.get_balance('EQAFe_UHOda_RqEn5TSpijG0ZeSN6r7vqtSE36yzMnumM_k5'))
-    except:
-        logging.info(f'error')
-
-    logging.info(user_dict[callback.message.chat.id]['user_balance'])
-    logging.info(user_dict[callback.message.chat.id]['bot_balance'])
-
-    user_balance = float(user_dict[callback.message.chat.id]['user_balance'])
-    bot_balance = float(user_dict[callback.message.chat.id]['bot_balance'])
-
-    merch = await get_merch(id_merch)
-
-    # Заменить на merch.amount тестовое число тон
-    
-    if (user_balance - 0.05 <= user_balance_now) and (bot_balance + 0.05 >= bot_balance_now):
+    invoice_id = (await get_user(callback.from_user.id)).invoice_id
+    status = await x_roket_pay.check_invoice_payed(invoice_id)
+    logging.info(f"get_invoice_{invoice_id}_status: {status} to {callback.from_user.id}")
+    if status == XRocketPayStatus.paid:
         pay = True
+        await update_user_data(**{
+            'id_tg': callback.message.chat.id,
+            'invoice_id': 0,
+            'status': XRocketPayStatus.passed
+        })
+
     else:
         pay = False
-
-    # pay = True
     if pay:
         await callback.message.answer(text='Оплата прошла успешно')
         count_order = len(await get_all_order()) + 1
