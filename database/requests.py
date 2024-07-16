@@ -6,7 +6,7 @@ from sqlalchemy import select, update
 
 
 # МЕРЧ
-async def get_all_merch() -> list[Merch]:
+async def get_all_merch():
     """
     Получаем всю информацию о товарах из БД
     :return:
@@ -26,6 +26,21 @@ async def get_merch(id_merch: int):
     logging.info("get_merch")
     async with async_session() as session:
         merch: Merch = await session.scalar(select(Merch).where(Merch.id_merch == id_merch))
+        if merch:
+            return merch
+        else:
+            return False
+
+
+async def get_merch_category(category_merch: str):
+    """
+    Получить информацию о товаре
+    :param category_merch:
+    :return:
+    """
+    logging.info("get_merch_category")
+    async with async_session() as session:
+        merch: Merch = await session.scalars(select(Merch).where(Merch.category == category_merch))
         if merch:
             return merch
         else:

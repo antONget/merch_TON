@@ -1,16 +1,16 @@
 from aiogram import Router, F, Bot
-from aiogram.types import Message, CallbackQuery, ReplyKeyboardRemove
+from aiogram.types import Message, CallbackQuery, InputMediaPhoto
 from aiogram.filters import CommandStart, or_f
 from aiogram.filters import StateFilter
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup, default_state
 
-from keyboards.keyboard_user import keyboards_main, keyboard_bay_merch, keyboards_get_contact, keyboard_confirm_phone, \
-    keyboard_confirm_order, keyboard_confirm_pay
+from keyboards.keyboard_user import keyboards_main, keyboards_get_contact, keyboard_confirm_phone, \
+    keyboard_confirm_order, keyboard_confirm_pay,keyboards_card_merch_new
 from config_data.config import Config, load_config
-from database.requests import get_all_merch, get_merch, get_all_order, add_order, add_user, update_name_user,\
+from database.requests import get_merch, get_all_order, add_order, add_user, update_name_user,\
     update_phone_user, update_address_delivery_user, update_address_delivery_order, get_user, get_order,\
-    update_user_ton_addr
+    update_user_ton_addr, get_merch_category
 from filter.filter import validate_russian_phone_number
 from cryptoh.CryptoHelper import ton_helper
 
@@ -44,13 +44,12 @@ async def process_start_command_user(message: Message, state: FSMContext) -> Non
     await state.set_state(default_state)
 
     data = {"id_tg": message.chat.id, "username": message.from_user.username, "name": message.from_user.first_name,
-            "phone": "None", "address_delivery": "None"}
+            "phone": "None", "address_delivery": "None", "ton_address": "None"}
     await add_user(data=data)
     await message.answer(text=f'Приветственное сообщение. Рассказ о том что может этот бот и краткая инструкция'
-                              f' как им пользоваться. Если возникли сложности или вопросы то можете обратиться'
-                              f' в поддержку',
+                              f' как им пользоваться.\n'
+                              f'Если возникли сложности или вопросы то можете обратиться в поддержку',
                          reply_markup=keyboards_main())
-    await merch_show(message=message)
 
 
 @router.message(F.text == 'Поддержка')
@@ -63,18 +62,118 @@ async def press_button_support(message: Message, state: FSMContext) -> None:
     await message.answer(text=f'Если у вас возникли вопросы то вы можете написать менеджеру {config.tg_bot.support}')
 
 
-async def merch_show(message: Message):
+@router.message(F.text == 'hoodie')
+async def select_category_hoodie(message: Message, state: FSMContext):
+    logging.info(f'select_category: {message.chat.id}')
+    await state.update_data(category='hoodie')
+    await show_merch_slider(message=message, state=state)
+
+
+@router.message(F.text == 'cup')
+async def select_category_hoodie(message: Message, state: FSMContext):
+    logging.info(f'select_category: {message.chat.id}')
+    await state.update_data(category='cup')
+    await show_merch_slider(message=message, state=state)
+
+
+@router.message(F.text == 'create your merch')
+async def select_category_hoodie(message: Message):
+    logging.info(f'select_category: {message.chat.id}')
+    pass
+
+
+async def show_merch_slider(message: Message, state: FSMContext):
     """
-    Выгрузка карточек товара пользователю
+    Выводим карточки в блоках
+    :param message:
+    :param state:
+    :return:
     """
-    logging.info(f'user_subscription: {message.from_user.id}')
-    models_merch = await get_all_merch()
+    logging.info(f'show_merch_slider: {message.chat.id}')
+    user_dict[message.chat.id] = await state.get_data()
+    category = user_dict[message.chat.id]['category']
+    models_merch = await get_merch_category(category_merch=category)
+    list_merch = []
     for merch in models_merch:
-        await asyncio.sleep(0.1)
-        await message.answer_photo(photo=merch.image,
-                                   caption=f'<b>{merch.title}</b>: <i>{merch.amount}</i> TON',
-                                   reply_markup=keyboard_bay_merch(merch.id_merch),
-                                   parse_mode='html')
+        list_merch.append(merch)
+    # выводим карточки
+    keyboard = keyboards_card_merch_new(list_merch=list_merch, block=0)
+    await message.answer_photo(photo=list_merch[0].image,
+                               reply_markup=keyboard)
+
+
+# >>
+@router.callback_query(F.data.startswith('forward_'))
+async def process_forward(callback: CallbackQuery, state: FSMContext):
+    """
+    Пагинация вперед
+    :param callback: int(callback.data.split('_')[1]) номер блока для вывода
+    :param state:
+    :return:
+    """
+    logging.info(f'process_forward_game: {callback.message.chat.id}')
+    user_dict[callback.message.chat.id] = await state.get_data()
+    category = user_dict[callback.message.chat.id]['category']
+    models_merch = await get_merch_category(category_merch=category)
+    list_merch = []
+    for merch in models_merch:
+        list_merch.append(merch)
+    count_block = len(list_merch)
+    num_block = int(callback.data.split('_')[1]) + 1
+    if num_block == count_block:
+        num_block = 0
+    keyboard = keyboards_card_merch_new(list_merch=list_merch, block=num_block)
+    try:
+        await callback.message.edit_media(media=InputMediaPhoto(media=list_merch[num_block].image),
+                                          reply_markup=keyboard)
+    except:
+        print('ERROR')
+        # await callback.message.edit_media(media=InputMediaPhoto(media=list_merch[num_block].image),
+        #                                   reply_markup=keyboard)
+
+
+# <<
+@router.callback_query(F.data.startswith('back_'))
+async def process_back(callback: CallbackQuery, state: FSMContext) -> None:
+    """
+    Пагинация по списку игр игрока
+    :param callback: int(callback.data.split('_')[1]) номер блока для вывода игр
+    :param state:
+    :return:
+    """
+    logging.info(f'process_back: {callback.message.chat.id}')
+    user_dict[callback.message.chat.id] = await state.get_data()
+    category = user_dict[callback.message.chat.id]['category']
+    models_merch = await get_merch_category(category_merch=category)
+    list_merch = []
+    for merch in models_merch:
+        list_merch.append(merch)
+    count_block = len(list_merch)
+    num_block = int(callback.data.split('_')[1]) - 1
+    if num_block < 0:
+        num_block = count_block - 1
+    keyboard = keyboards_card_merch_new(list_merch=list_merch, block=num_block)
+    try:
+        await callback.message.edit_media(media=InputMediaPhoto(media=list_merch[num_block].image),
+                                          reply_markup=keyboard)
+    except:
+        print('ERROR')
+        # await callback.message.edit_media(media=InputMediaPhoto(media=list_merch[num_block].image),
+        #                                   reply_markup=keyboard)
+
+
+# async def merch_show(message: Message, models_merch: Merch):
+#     """
+#     Выгрузка карточек товара пользователю
+#     """
+#     logging.info(f'user_subscription: {message.from_user.id}')
+#     models_merch = await get_all_merch()
+#     for merch in models_merch:
+#         await asyncio.sleep(0.1)
+#         await message.answer_photo(photo=merch.image,
+#                                    caption=f'<b>{merch.title}</b>: <i>{merch.amount}</i> TON',
+#                                    reply_markup=keyboard_bay_merch(merch.id_merch),
+#                                    parse_mode='html')
 
 
 @router.callback_query(F.data.startswith('bay_'))

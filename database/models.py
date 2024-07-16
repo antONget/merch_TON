@@ -29,6 +29,7 @@ class Merch(Base):
     __tablename__ = 'merch'
 
     id_merch: Mapped[int] = mapped_column(primary_key=True)
+    category: Mapped[str] = mapped_column(String(20))
     title: Mapped[str] = mapped_column(String(20))
     image: Mapped[str] = mapped_column(String(50))
     amount: Mapped[float] = mapped_column(Float)
