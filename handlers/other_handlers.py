@@ -21,11 +21,11 @@ async def all_calback(callback: CallbackQuery) -> None:
 async def all_message(message: Message) -> None:
     logging.info(f'all_message')
     if message.photo:
-        logging.info(f'all_message message.photo')
+        logging.info(f'all_message message.photo: {message.photo[-1].file_id}')
         print(message.photo[-1].file_id)
 
     if message.video:
-        logging.info(f'all_message message.photo')
+        logging.info(f'all_message message.video {message.video.file_id}')
         print(message.video.file_id)
 
     if message.sticker:
