@@ -18,11 +18,13 @@ def keyboards_main() -> ReplyKeyboardMarkup:
 
 def keyboard_create_merch():
     logging.info("keyboard_create_merch")
-    button_1 = InlineKeyboardButton(text='hoodie',
+    button_1 = InlineKeyboardButton(text='hoodie 👘',
                                     callback_data='custom_hoodie')
-    button_2 = InlineKeyboardButton(text='cup',
+    button_2 = InlineKeyboardButton(text='cup ☕️',
                                     callback_data='custom_cup')
-    keyboard = InlineKeyboardMarkup(inline_keyboard=[[button_1], [button_2]],)
+    button_3 = InlineKeyboardButton(text='flag 🚩',
+                                    callback_data='custom_flag')
+    keyboard = InlineKeyboardMarkup(inline_keyboard=[[button_1], [button_2], [button_3]],)
     return keyboard
 
 
@@ -95,6 +97,15 @@ def keyboard_size_hoodie():
     button_1 = InlineKeyboardButton(text='L', callback_data=f'size_L')
     button_2 = InlineKeyboardButton(text='XL', callback_data=f'size_XL')
     button_3 = InlineKeyboardButton(text='XXL', callback_data=f'size_XXL')
+    keyboard = InlineKeyboardMarkup(inline_keyboard=[[button_1, button_2, button_3]], )
+    return keyboard
+
+
+def keyboard_size_hoodie1():
+    logging.info("confirm_pay")
+    button_1 = InlineKeyboardButton(text='L', callback_data=f'size1_L')
+    button_2 = InlineKeyboardButton(text='XL', callback_data=f'size1_XL')
+    button_3 = InlineKeyboardButton(text='XXL', callback_data=f'size1_XXL')
     keyboard = InlineKeyboardMarkup(inline_keyboard=[[button_1, button_2, button_3]], )
     return keyboard
 

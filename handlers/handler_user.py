@@ -7,7 +7,7 @@ from aiogram.fsm.state import State, StatesGroup, default_state
 
 from keyboards.keyboard_user import keyboards_main, keyboards_get_contact, keyboard_confirm_phone, \
     keyboard_confirm_order, keyboard_confirm_pay, keyboards_card_merch_new, keyboard_create_merch, keyboard_pay_custom, \
-    keyboard_size_hoodie
+    keyboard_size_hoodie, keyboard_size_hoodie1
 from config_data.config import Config, load_config
 from database.requests import get_merch, get_all_order, add_order, add_user, update_name_user,\
     update_phone_user, update_address_delivery_user, update_address_delivery_order, get_user, get_order,\
@@ -47,7 +47,7 @@ async def process_start_command_user(message: Message, state: FSMContext) -> Non
     await add_user(data=data)
     await message.answer(text=f'Привет! Мы - команда One🫶🏻\n\n'
                               f'У нас отлично получается создавать стильный и качественный мерч, который мы быстро'
-                              f' и бесплатно доставим в любой город СНГ от 2 до 15 дней💙',
+                              f' и бесплатно доставим в любой город СНГ от 3 до 15 дней💙',
                          reply_markup=keyboards_main())
 
 
@@ -101,13 +101,16 @@ async def select_category_hoodie(message: Message):
 
 
 @router.callback_query(F.data.startswith('custom_'))
-async def process_custom(callback: CallbackQuery, state: FSMContext):
+async def process_custom(callback: CallbackQuery, state: FSMContext, bot: Bot):
     logging.info(f'process_custom: {callback.message.chat.id}')
+    await bot.delete_message(chat_id=callback.message.chat.id, message_id=callback.message.message_id)
     answer = callback.data.split('_')[1]
     if answer == 'hoodie':
-        await state.update_data(id_merch=7)
+        await state.update_data(id_merch=4)
     elif answer == 'cup':
-        await state.update_data(id_merch=8)
+        await state.update_data(id_merch=5)
+    elif answer == 'flag':
+        await state.update_data(id_merch=17)
     await callback.message.answer(text='Отлично теперь пришли фото или файл')
     await state.set_state(Merch.custom)
 
@@ -116,43 +119,53 @@ async def process_custom(callback: CallbackQuery, state: FSMContext):
 async def get_file_custom(message: Message, bot: Bot, state: FSMContext):
     logging.info(f'get_file_custom: {message.chat.id}')
     if message.photo:
-        try:
-            await bot.send_photo(chat_id=config.tg_bot.admin_ids,
-                                 photo=message.photo[-1].file_id,
-                                 caption=f'Пользователь @{message.from_user.username} прислал фото для кастомного мерча')
-            await message.answer(text='Фото успешно отправлено менеджеру, осталось оплатить',
-                                 reply_markup=keyboard_pay_custom())
-
-        except:
-            await message.answer(text='Фото не отправлено, обратитесь в поддержку')
+        for admin_id in config.tg_bot.admin_ids.split(','):
+            try:
+                await bot.send_photo(chat_id=admin_id,
+                                     photo=message.photo[-1].file_id,
+                                     caption=f'Пользователь @{message.from_user.username} прислал фото для кастомного мерча')
+                await message.answer(text='Фото успешно отправлено менеджеру, осталось оплатить',
+                                     reply_markup=keyboard_pay_custom())
+            except:
+                await message.answer(text='Фото не отправлено, обратитесь в поддержку')
     if message.document:
-        try:
-            await bot.send_document(chat_id=config.tg_bot.admin_ids,
-                                    document=message.document.file_id,
-                                    caption=f'Пользователь @{message.from_user.username} прислал файл для кастомного мерча')
-            await message.answer(text='Фото успешно отправлено менеджеру, осталось оплатить',
-                                 reply_markup=keyboard_pay_custom())
-        except:
-            await message.answer(text='Фото не отправлено, обратитесь в поддержку')
+        for admin_id in config.tg_bot.admin_ids.split(','):
+            try:
+                await bot.send_document(chat_id=admin_id,
+                                        document=message.document.file_id,
+                                        caption=f'Пользователь @{message.from_user.username} прислал файл для кастомного мерча')
+                await message.answer(text='Фото успешно отправлено менеджеру, осталось оплатить',
+                                     reply_markup=keyboard_pay_custom())
+            except:
+                await message.answer(text='Фото не отправлено, обратитесь в поддержку')
 
 
 @router.callback_query(F.data.startswith('create_pay'))
-async def process_create_pay(callback: CallbackQuery, state: FSMContext):
+@router.callback_query(F.data.startswith('size1_'))
+async def process_create_pay(callback: CallbackQuery, state: FSMContext, bot: Bot):
     """
     Обработка оплаты товара
     :param callback:
     :param state:
+    :param bot:
     :return:
     """
     logging.info(f'process_bay_merch: {callback.message.chat.id}')
-    await state.set_state(default_state)
+    await bot.delete_message(chat_id=callback.message.chat.id, message_id=callback.message.message_id)
     user_dict[callback.message.chat.id] = await state.get_data()
     id_merch = user_dict[callback.message.chat.id]['id_merch']
+    if not callback.data.startswith('size1'):
+        await state.set_state(default_state)
+        info_merch = await get_merch(id_merch=id_merch)
+        if info_merch.category == 'hoodie':
+            await callback.message.answer(text=f'Выберите размер hoodie',
+                                          reply_markup=keyboard_size_hoodie1())
+            return
     # !!! REPLACE TEST AMOUNT TO
     merch = await get_merch(id_merch=id_merch)
     amount = merch.amount / 10000
     invoice_id, link = await x_roket_pay.create_invoice(amount, currency=XRocketPayCurrency.ton,
-                                                        description='📄 Pay for our merch!')
+                                                        description='Pay for our merch!')
 
     await update_user_data(**{
         'id_tg': callback.message.chat.id,
@@ -242,7 +255,8 @@ async def process_back(callback: CallbackQuery, state: FSMContext) -> None:
 
 
 @router.callback_query(F.data.startswith('bay_'))
-async def process_bay_merch(callback: CallbackQuery, state: FSMContext):
+@router.callback_query(F.data.startswith('size_'))
+async def process_bay_merch(callback: CallbackQuery, state: FSMContext, bot: Bot):
     """
     Обработка оплаты товара
     :param callback:
@@ -250,14 +264,23 @@ async def process_bay_merch(callback: CallbackQuery, state: FSMContext):
     :return:
     """
     logging.info(f'process_bay_merch: {callback.message.chat.id}')
-    await state.set_state(default_state)
-    id_merch = int(callback.data.split('_')[1])
-    await state.update_data(id_merch=id_merch)
-    # !!! REPLACE TEST AMOUNT TO
+    await bot.delete_message(chat_id=callback.message.chat.id, message_id=callback.message.message_id)
+    if not callback.data.startswith('size'):
+        await state.set_state(default_state)
+        id_merch = int(callback.data.split('_')[1])
+        await state.update_data(id_merch=id_merch)
+        info_merch = await get_merch(id_merch=id_merch)
+        if info_merch.category == 'hoodie':
+            await callback.message.answer(text=f'Выберите размер hoodie',
+                                          reply_markup=keyboard_size_hoodie())
+            return
+    user_dict[callback.message.chat.id] = await state.get_data()
+    id_merch = user_dict[callback.message.chat.id]['id_merch']
     merch = await get_merch(id_merch=id_merch)
+    # !!! REPLACE TEST AMOUNT TO
     amount = merch.amount / 10000
     invoice_id, link = await x_roket_pay.create_invoice(amount, currency=XRocketPayCurrency.ton,
-                                                        description='📄 Pay for our merch!')
+                                                        description='Pay for our merch!')
 
     await update_user_data(**{
         'id_tg': callback.message.chat.id,
@@ -305,12 +328,9 @@ async def process_paying(callback: CallbackQuery, state: FSMContext):
         data = {"id_order": count_order, "id_tg": callback.message.chat.id, "id_merch": id_merch, "count": 1,
                 "cost": info_merch.amount, "address_delivery": "None"}
         await add_order(data=data)
-        if info_merch.category == 'cup':
-            await callback.message.answer(text=f'Как вас зовут?')
-            await state.set_state(Merch.username)
-        elif info_merch.category == 'hoodie':
-            await callback.message.answer(text=f'Выберите размер hoodie',
-                                          reply_markup=keyboard_size_hoodie())
+
+        await callback.message.answer(text=f'Как вас зовут?')
+        await state.set_state(Merch.username)
     else:
         await callback.message.answer(text='Оплата не прошла. Повторите попытку')
         await state.set_state(default_state)
