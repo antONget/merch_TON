@@ -163,7 +163,7 @@ async def process_create_pay(callback: CallbackQuery, state: FSMContext, bot: Bo
             return
     # !!! REPLACE TEST AMOUNT TO
     merch = await get_merch(id_merch=id_merch)
-    amount = merch.amount
+    amount = merch.amount / 10000
     invoice_id, link = await x_roket_pay.create_invoice(amount, currency=XRocketPayCurrency.ton,
                                                         description='Pay for our merch!')
 
@@ -278,7 +278,7 @@ async def process_bay_merch(callback: CallbackQuery, state: FSMContext, bot: Bot
     id_merch = user_dict[callback.message.chat.id]['id_merch']
     merch = await get_merch(id_merch=id_merch)
     # !!! REPLACE TEST AMOUNT TO
-    amount = merch.amount
+    amount = merch.amount / 10000
     invoice_id, link = await x_roket_pay.create_invoice(amount, currency=XRocketPayCurrency.ton,
                                                         description='Pay for our merch!')
 
