@@ -1,4 +1,3 @@
-# import requests as r
 import aiohttp
 from fake_useragent import UserAgent
 
