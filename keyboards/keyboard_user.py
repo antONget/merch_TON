@@ -87,7 +87,7 @@ def keyboard_confirm_phone():
 def keyboard_confirm_order(id_order: int):
     logging.info("confirm_pay")
     button_1 = InlineKeyboardButton(text='Подтвердить', callback_data=f'order_confirm_{id_order}')
-    button_2 = InlineKeyboardButton(text='Отмена', callback_data=f'order_cancel_{id_order}')
+    button_2 = InlineKeyboardButton(text='Изменить', callback_data=f'order_cancel_{id_order}')
     keyboard = InlineKeyboardMarkup(inline_keyboard=[[button_1], [button_2]], )
     return keyboard
 

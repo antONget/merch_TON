@@ -163,7 +163,7 @@ async def process_create_pay(callback: CallbackQuery, state: FSMContext, bot: Bo
             return
     # !!! REPLACE TEST AMOUNT TO
     merch = await get_merch(id_merch=id_merch)
-    amount = merch.amount / 10000
+    amount = merch.amount
     invoice_id, link = await x_roket_pay.create_invoice(amount, currency=XRocketPayCurrency.ton,
                                                         description='Pay for our merch!')
 
@@ -278,7 +278,7 @@ async def process_bay_merch(callback: CallbackQuery, state: FSMContext, bot: Bot
     id_merch = user_dict[callback.message.chat.id]['id_merch']
     merch = await get_merch(id_merch=id_merch)
     # !!! REPLACE TEST AMOUNT TO
-    amount = merch.amount / 10000
+    amount = merch.amount
     invoice_id, link = await x_roket_pay.create_invoice(amount, currency=XRocketPayCurrency.ton,
                                                         description='Pay for our merch!')
 
@@ -318,35 +318,31 @@ async def process_paying(callback: CallbackQuery, state: FSMContext):
         count_order = len(await get_all_order()) + 1
         info_merch = await get_merch(id_merch=id_merch)
         await state.update_data(id_order=count_order)
-        # if await get_user(id_tg=callback.message.chat.id):
-        #     user = await get_user(id_tg=callback.message.chat.id)
-        #     data = {"id_order": count_order, "id_tg": callback.message.chat.id, "id_merch": id_merch, "count": 1,
-        #             "cost": info_merch.amount, "address_delivery": user.address_delivery}
-        #     await add_order(data=data)
-        #     await get_address_delivery_1(message=callback.message, state=state)
-        # else:
         data = {"id_order": count_order, "id_tg": callback.message.chat.id, "id_merch": id_merch, "count": 1,
                 "cost": info_merch.amount, "address_delivery": "None"}
         await add_order(data=data)
 
-        await callback.message.answer(text=f'Как вас зовут?')
-        await state.set_state(Merch.username)
+        await callback.message.answer(
+            text=f'Для точной доставки нам нужны данные получителя: фио, телефон для уведомления,'
+                 f' адрес и город, наш партнер по доставке CDEK ✅',
+            reply_markup=keyboards_main())
+        await state.set_state(Merch.address_delivery)
     else:
         await callback.message.answer(text='Оплата не прошла. Повторите попытку')
         await state.set_state(default_state)
 
 
-@router.callback_query(F.data.startswith('size_'))
-async def get_size_hoodie(callback: CallbackQuery, state: FSMContext):
-    logging.info('get_size_hoodie')
-    await callback.answer()
-    size = callback.data.split('_')[1]
-    await state.update_data(size=size)
-    user_dict[callback.message.chat.id] = await state.get_data()
-    id_order = user_dict[callback.message.chat.id]['id_order']
-    await update_size_order(id_order=id_order, size=size)
-    await callback.message.answer(text=f'Как вас зовут?')
-    await state.set_state(Merch.username)
+# @router.callback_query(F.data.startswith('size_'))
+# async def get_size_hoodie(callback: CallbackQuery, state: FSMContext):
+#     logging.info('get_size_hoodie')
+#     await callback.answer()
+#     size = callback.data.split('_')[1]
+#     await state.update_data(size=size)
+#     user_dict[callback.message.chat.id] = await state.get_data()
+#     id_order = user_dict[callback.message.chat.id]['id_order']
+#     await update_size_order(id_order=id_order, size=size)
+#     await callback.message.answer(text=f'Как вас зовут?')
+#     await state.set_state(Merch.username)
 
 
 @router.callback_query(F.data.startswith('cancel_pay_for_'))
@@ -355,153 +351,156 @@ async def cancel_pay_for(callback: CallbackQuery, state: FSMContext):
     await state.clear()
 
 
-@router.message(F.text, Merch.username)
-async def get_username(message: Message, state: FSMContext):
-    """Получаем имя пользователя. Запрашиваем номер телефона"""
-    logging.info(f'get_username: {message.from_user.id}')
-    name = message.text
-    await state.update_data(name=name)
-    await update_name_user(id_tg=message.chat.id, name=name)
-    await message.answer(text=f'Рад вас приветствовать {name}. Поделитесь вашим номером телефона ☎️',
-                         reply_markup=keyboards_get_contact())
-    await state.set_state(Merch.phone)
+# @router.message(F.text, Merch.username)
+# async def get_username(message: Message, state: FSMContext):
+#     """Получаем имя пользователя. Запрашиваем номер телефона"""
+#     logging.info(f'get_username: {message.from_user.id}')
+#     name = message.text
+#     await state.update_data(name=name)
+#     await update_name_user(id_tg=message.chat.id, name=name)
+#     await message.answer(text=f'Рад вас приветствовать {name}. Поделитесь вашим номером телефона ☎️',
+#                          reply_markup=keyboards_get_contact())
+#     await state.set_state(Merch.phone)
 
 
-@router.message(or_f(F.text, F.contact), StateFilter(Merch.phone))
-async def process_validate_russian_phone_number(message: Message, state: FSMContext) -> None:
-    """Получаем номер телефона пользователя (проводим его валидацию). Подтверждаем введенные данные"""
-    logging.info("process_validate_russian_phone_number")
-    if message.contact:
-        phone = str(message.contact.phone_number)
-    else:
-        phone = message.text
-        if not validate_russian_phone_number(phone):
-            await message.answer(text="Неверный формат номера. Повторите ввод, например 89991112222:")
-            return
-    await state.update_data(phone=phone)
-    await update_phone_user(id_tg=message.chat.id, phone=phone)
-    await state.set_state(default_state)
-    await message.answer(text=f'Записываю, {phone}. Верно?',
-                         reply_markup=keyboard_confirm_phone())
+# @router.message(or_f(F.text, F.contact), StateFilter(Merch.phone))
+# async def process_validate_russian_phone_number(message: Message, state: FSMContext) -> None:
+#     """Получаем номер телефона пользователя (проводим его валидацию). Подтверждаем введенные данные"""
+#     logging.info("process_validate_russian_phone_number")
+#     if message.contact:
+#         phone = str(message.contact.phone_number)
+#     else:
+#         phone = message.text
+#         if not validate_russian_phone_number(phone):
+#             await message.answer(text="Неверный формат номера. Повторите ввод, например 89991112222:")
+#             return
+#     await state.update_data(phone=phone)
+#     await update_phone_user(id_tg=message.chat.id, phone=phone)
+#     await state.set_state(default_state)
+#     await message.answer(text=f'Записываю, {phone}. Верно?',
+#                          reply_markup=keyboard_confirm_phone())
 
 
-@router.callback_query(F.data == 'get_phone_back')
-async def process_get_phone_back(callback: CallbackQuery, state: FSMContext) -> None:
-    """Изменение введенного номера телефона"""
-    logging.info(f'process_get_phone_back: {callback.message.chat.id}')
-    await callback.message.edit_text(text=f'Поделитесь вашим номером телефона ☎️',
-                                     reply_markup=None)
-    await state.set_state(Merch.phone)
+# @router.callback_query(F.data == 'get_phone_back')
+# async def process_get_phone_back(callback: CallbackQuery, state: FSMContext) -> None:
+#     """Изменение введенного номера телефона"""
+#     logging.info(f'process_get_phone_back: {callback.message.chat.id}')
+#     await callback.message.edit_text(text=f'Поделитесь вашим номером телефона ☎️',
+#                                      reply_markup=None)
+#     await state.set_state(Merch.phone)
 
 
-@router.callback_query(F.data == 'confirm_phone')
-async def process_confirm_phone(callback: CallbackQuery, state: FSMContext, bot: Bot) -> None:
-    """Введенный номер телефона подтвержден. Запрос города"""
-    logging.info(f'process_confirm_phone: {callback.message.chat.id}')
-    await bot.delete_message(chat_id=callback.message.chat.id, message_id=callback.message.message_id)
-    await callback.message.answer(text=f'Для точной доставки нам нужны данные получителя: фио, телефон для уведомления,'
-                                       f' адрес и город, наш партнер по доставке CDEK ✅',
-                                  reply_markup=keyboards_main())
-    await state.set_state(Merch.address_delivery)
+# @router.callback_query(F.data == 'confirm_phone')
+# async def process_confirm_phone(callback: CallbackQuery, state: FSMContext, bot: Bot) -> None:
+#     """Введенный номер телефона подтвержден. Запрос города"""
+#     logging.info(f'process_confirm_phone: {callback.message.chat.id}')
+#     await bot.delete_message(chat_id=callback.message.chat.id, message_id=callback.message.message_id)
+#     await callback.message.answer(text=f'Для точной доставки нам нужны данные получителя: фио, телефон для уведомления,'
+#                                        f' адрес и город, наш партнер по доставке CDEK ✅',
+#                                   reply_markup=keyboards_main())
+#     await state.set_state(Merch.address_delivery)
 
 
 @router.message(F.text, Merch.address_delivery)
-async def get_address_delivery(message: Message, state: FSMContext):
+async def get_address_delivery(message: Message, state: FSMContext, bot: Bot):
     """Получаем имя пользователя. Запрашиваем номер телефона"""
     logging.info(f'get_address_delivery: {message.from_user.id}')
-    address_delivery = message.text
-    await state.update_data(address_delivery=address_delivery)
-    await update_address_delivery_user(id_tg=message.chat.id, address_delivery=address_delivery)
+    info_contact = message.text
+    await state.update_data(address_delivery=info_contact)
+    await update_address_delivery_user(id_tg=message.chat.id, address_delivery=info_contact)
 
     user_dict[message.chat.id] = await state.get_data()
-    id_merch = user_dict[message.chat.id]['id_merch']
-    name = user_dict[message.chat.id]['name']
-    phone = user_dict[message.chat.id]['phone']
-    address_delivery = user_dict[message.chat.id]['address_delivery']
     id_order = user_dict[message.chat.id]['id_order']
-    await update_address_delivery_order(id_order=id_order, address_delivery=address_delivery)
-    merch_info = await get_merch(id_merch=id_merch)
-    await message.answer(text=f'<b>{name}, проверьте данные:</b>\n'
-                              f'<i>Merch:</i> {merch_info.title} - {merch_info.amount} TON\n'
-                              f'<i>Ваш телефон:</i> {phone}\n'
-                              f'<i>Адрес доставки:</i> {address_delivery}.\n'
-                              f'Верно?',
-                         reply_markup=keyboard_confirm_order(id_order=id_order),
-                         parse_mode='html')
+    await update_address_delivery_order(id_order=id_order, address_delivery=info_contact)
+    # id_merch = user_dict[message.chat.id]['id_merch']
+    # name = user_dict[message.chat.id]['name']
+    # phone = user_dict[message.chat.id]['phone']
+    # address_delivery = user_dict[message.chat.id]['address_delivery']
+    # id_order = user_dict[message.chat.id]['id_order']
+    # await update_address_delivery_order(id_order=id_order, address_delivery=info_contact)
+    # merch_info = await get_merch(id_merch=id_merch)
+    # await message.answer(text=f'<b>{name}, проверьте данные:</b>\n'
+    #                           f'<i>Merch:</i> {merch_info.title} - {merch_info.amount} TON\n'
+    #                           f'<i>Ваш телефон:</i> {phone}\n'
+    #                           f'<i>Адрес доставки:</i> {address_delivery}.\n'
+    #                           f'Верно?',
+    #                      reply_markup=keyboard_confirm_order(id_order=id_order),
+    #                      parse_mode='html')
 
 
-async def get_address_delivery_1(message: Message, state: FSMContext):
-    """
-    Если пользователь подтвердил ранее введенные данные
-    :param message:
-    :param state:
-    :return:
-    """
-    logging.info(f'get_address_delivery: {message.chat.id}')
+# async def get_address_delivery_1(message: Message, state: FSMContext):
+#     """
+#     Если пользователь подтвердил ранее введенные данные
+#     :param message:
+#     :param state:
+#     :return:
+#     """
+#     logging.info(f'get_address_delivery: {message.chat.id}')
+#     user_info = await get_user(id_tg=message.chat.id)
+#     user_dict[message.chat.id] = await state.get_data()
+#     id_merch = user_dict[message.chat.id]['id_merch']
+#     id_order = user_dict[message.chat.id]['id_order']
+#     merch_info = await get_merch(id_merch=id_merch)
+#
+#     await message.answer(text=f'<b>{user_info.name}, проверьте данные:</b>\n'
+#                               f'<i>Merch:</i> {merch_info.title} - {merch_info.amount} TON\n'
+#                               f'<i>Ваш телефон:</i> {user_info.phone}\n'
+#                               f'<i>Адрес доставки:</i> {user_info.address_delivery}.\n'
+#                               f'Верно?',
+#                          reply_markup=keyboard_confirm_order(id_order=id_order),
+#                          parse_mode='html')
+#
+#
+# @router.callback_query(F.data.startswith("order_"))
+# async def confirm_order(callback: CallbackQuery, state: FSMContext, bot: Bot):
+#     """
+#     Подтверждение заказ
+#     :param callback:
+#     :param state:
+#     :return:
+#     """
+#     logging.info(f'confirm_order: {callback.message.chat.id}')
+#     answer = callback.data.split('_')[1]
+#     if answer == 'cancel':
+#         await bot.delete_message(chat_id=callback.message.chat.id, message_id=callback.message.message_id)
+#         await callback.message.answer(text='Данные не подтверждены, повторите ввод')
+#         await get_username(message=callback.message, state=state)
+#     elif answer == 'confirm':
+#         await callback.answer(text='Данные подтверждены',
+#                               show_alert=True)
+#         user_dict[callback.message.chat.id] = await state.get_data()
+    id_merch = user_dict[message.chat.id]['id_merch']
+#         id_order = user_dict[callback.message.chat.id]['id_order']
     user_info = await get_user(id_tg=message.chat.id)
-    user_dict[message.chat.id] = await state.get_data()
-    id_merch = user_dict[message.chat.id]['id_merch']
-    id_order = user_dict[message.chat.id]['id_order']
+#         address_delivery = user_info.address_delivery
     merch_info = await get_merch(id_merch=id_merch)
+    order_info = await get_order(id_order=id_order)
 
-    await message.answer(text=f'<b>{user_info.name}, проверьте данные:</b>\n'
-                              f'<i>Merch:</i> {merch_info.title} - {merch_info.amount} TON\n'
-                              f'<i>Ваш телефон:</i> {user_info.phone}\n'
-                              f'<i>Адрес доставки:</i> {user_info.address_delivery}.\n'
-                              f'Верно?',
-                         reply_markup=keyboard_confirm_order(id_order=id_order),
-                         parse_mode='html')
+    await message.answer(text=f'Благодарим вас за заказ!\n'
+                              f'Наш merch {merch_info.title} уже мчит к вам на адрес '
+                              f'{order_info.address_delivery}.',
+                                  reply_markup=None)
+    for admin_id in config.tg_bot.admin_ids.split(','):
+        try:
+            if merch_info.category == 'hoodie':
+                size = order_info.size
+                await bot.send_message(chat_id=admin_id,
+                                       text=f'<b>Заказ № {order_info.id_order}:</b>\n'
+                                            f'<i>Заказчик:</i> {user_info.name} / @{user_info.username}\n'
+                                            f'<i>Номер телефона</i>: {user_info.phone}\n'
+                                            f'<i>Мерч:</i> {merch_info.title}\n'
+                                            f'<i>Размер:</i> {size}'
+                                            f'<i>Адрес:</i> {order_info.address_delivery}',
+                                       parse_mode='html')
+            else:
+                await bot.send_message(chat_id=admin_id,
+                                       text=f'<b>Заказ № {order_info.id_order}:</b>\n'
+                                            f'<i>Заказчик:</i> {user_info.name} / @{user_info.username}\n'
+                                            f'<i>Номер телефона</i>: {user_info.phone}\n'
+                                            f'<i>Мерч:</i> {merch_info.title}\n'
+                                            f'<i>Адрес:</i> {order_info.address_delivery}',
+                                       parse_mode='html')
+        except:
+            pass
+    await state.set_state(default_state)
 
-
-@router.callback_query(F.data.startswith("order_"))
-async def confirm_order(callback: CallbackQuery, state: FSMContext, bot: Bot):
-    """
-    Подтверждение заказ
-    :param callback:
-    :param state:
-    :return:
-    """
-    logging.info(f'confirm_order: {callback.message.chat.id}')
-    answer = callback.data.split('_')[1]
-    if answer == 'cancel':
-        await bot.delete_message(chat_id=callback.message.chat.id, message_id=callback.message.message_id)
-        await callback.message.answer(text='Данные не подтверждены, повторите ввод')
-        await get_username(message=callback.message, state=state)
-    elif answer == 'confirm':
-        await callback.answer(text='Данные подтверждены',
-                              show_alert=True)
-        user_dict[callback.message.chat.id] = await state.get_data()
-        id_merch = user_dict[callback.message.chat.id]['id_merch']
-        id_order = user_dict[callback.message.chat.id]['id_order']
-        user_info = await get_user(id_tg=callback.message.chat.id)
-        address_delivery = user_info.address_delivery
-        merch_info = await get_merch(id_merch=id_merch)
-        order_info = await get_order(id_order=id_order)
-
-        await callback.message.edit_text(text=f'Благодарим вас за заказ!\n'
-                                              f'Наш merch {merch_info.title} уже мчит к вам на адрес '
-                                              f'{address_delivery}.',
-                                         reply_markup=None)
-        for admin_id in config.tg_bot.admin_ids.split(','):
-            try:
-                if merch_info.category == 'hoodie':
-                    size = order_info.size
-                    await bot.send_message(chat_id=admin_id,
-                                           text=f'<b>Заказ № {order_info.id_order}:</b>\n'
-                                                f'<i>Заказчик:</i> {user_info.name} / @{user_info.username}\n'
-                                                f'<i>Номер телефона</i>: {user_info.phone}\n'
-                                                f'<i>Мерч:</i> {merch_info.title}\n'
-                                                f'<i>Размер:</i> {size}'
-                                                f'<i>Адрес:</i> {order_info.address_delivery}',
-                                           parse_mode='html')
-                else:
-                    await bot.send_message(chat_id=admin_id,
-                                           text=f'<b>Заказ № {order_info.id_order}:</b>\n'
-                                                f'<i>Заказчик:</i> {user_info.name} / @{user_info.username}\n'
-                                                f'<i>Номер телефона</i>: {user_info.phone}\n'
-                                                f'<i>Мерч:</i> {merch_info.title}\n'
-                                                f'<i>Адрес:</i> {order_info.address_delivery}',
-                                           parse_mode='html')
-            except:
-                pass
-        await state.set_state(default_state)
