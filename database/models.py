@@ -42,6 +42,7 @@ class Order(Base):
     id_order: Mapped[int] = mapped_column(primary_key=True)
     id_tg: Mapped[int] = mapped_column(Integer)
     id_merch: Mapped[str] = mapped_column(String(20))
+    size: Mapped[str] = mapped_column(String(20))
     count: Mapped[int] = mapped_column(Integer)
     cost: Mapped[float] = mapped_column(Float)
     address_delivery: Mapped[str] = mapped_column(String(200))

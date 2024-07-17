@@ -6,11 +6,12 @@ from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup, default_state
 
 from keyboards.keyboard_user import keyboards_main, keyboards_get_contact, keyboard_confirm_phone, \
-    keyboard_confirm_order, keyboard_confirm_pay, keyboards_card_merch_new, keyboard_create_merch, keyboard_pay_custom
+    keyboard_confirm_order, keyboard_confirm_pay, keyboards_card_merch_new, keyboard_create_merch, keyboard_pay_custom, \
+    keyboard_size_hoodie
 from config_data.config import Config, load_config
 from database.requests import get_merch, get_all_order, add_order, add_user, update_name_user,\
     update_phone_user, update_address_delivery_user, update_address_delivery_order, get_user, get_order,\
-    get_merch_category, update_user_data
+    get_merch_category, update_user_data, update_size_order
 from filter.filter import validate_russian_phone_number
 from cryptoh.CryptoHelper import XRocketPayStatus, XRocketPayCurrency, x_roket_pay
 
@@ -32,6 +33,7 @@ class Merch(StatesGroup):
     id_merch = State()
     custom = State()
 
+
 @router.message(CommandStart())
 async def process_start_command_user(message: Message, state: FSMContext) -> None:
     """
@@ -43,13 +45,13 @@ async def process_start_command_user(message: Message, state: FSMContext) -> Non
     data = {"id_tg": message.chat.id, "username": message.from_user.username, "name": message.from_user.first_name,
             "phone": "None", "address_delivery": "None"}
     await add_user(data=data)
-    await message.answer(text=f'Приветственное сообщение. Рассказ о том что может этот бот и краткая инструкция'
-                              f' как им пользоваться.\n'
-                              f'Если возникли сложности или вопросы то можете обратиться в поддержку',
+    await message.answer(text=f'Привет! Мы - команда One🫶🏻\n\n'
+                              f'У нас отлично получается создавать стильный и качественный мерч, который мы быстро'
+                              f' и бесплатно доставим в любой город СНГ от 2 до 15 дней💙',
                          reply_markup=keyboards_main())
 
 
-@router.message(F.text == 'Поддержка')
+@router.message(F.text == 'support 💙')
 async def press_button_support(message: Message, state: FSMContext) -> None:
     """
     Запрос поддержки
@@ -59,21 +61,39 @@ async def press_button_support(message: Message, state: FSMContext) -> None:
     await message.answer(text=f'Если у вас возникли вопросы то вы можете написать менеджеру {config.tg_bot.support}')
 
 
-@router.message(F.text == 'hoodie')
+@router.message(F.text == 'community 👨‍🎤')
+async def press_button_support(message: Message, state: FSMContext) -> None:
+    """
+    ссылка на канал
+    """
+    logging.info("press_button_support")
+    await state.set_state(default_state)
+    await message.answer(text=f'Переходите в нашу группу. Там вы найдете много полезной информации'
+                              f' {config.tg_bot.community}')
+
+
+@router.message(F.text == 'hoodie 👘')
 async def select_category_hoodie(message: Message, state: FSMContext):
     logging.info(f'select_category: {message.chat.id}')
     await state.update_data(category='hoodie')
     await show_merch_slider(message=message, state=state)
 
 
-@router.message(F.text == 'cup')
-async def select_category_hoodie(message: Message, state: FSMContext):
-    logging.info(f'select_category: {message.chat.id}')
+@router.message(F.text == 'cup ☕️')
+async def select_category_cup(message: Message, state: FSMContext):
+    logging.info(f'select_category_cup: {message.chat.id}')
     await state.update_data(category='cup')
     await show_merch_slider(message=message, state=state)
 
 
-@router.message(F.text == 'create your merch')
+@router.message(F.text == 'flag 🚩')
+async def select_category_flag(message: Message, state: FSMContext):
+    logging.info(f'select_category_flag: {message.chat.id}')
+    await state.update_data(category='flag')
+    await show_merch_slider(message=message, state=state)
+
+
+@router.message(F.text == 'create your merch 🎨')
 async def select_category_hoodie(message: Message):
     logging.info(f'select_category: {message.chat.id}')
     await message.answer(text='На чем бы вы хотели сделать merch',
@@ -285,11 +305,28 @@ async def process_paying(callback: CallbackQuery, state: FSMContext):
         data = {"id_order": count_order, "id_tg": callback.message.chat.id, "id_merch": id_merch, "count": 1,
                 "cost": info_merch.amount, "address_delivery": "None"}
         await add_order(data=data)
-        await callback.message.answer(text=f'Как вас зовут?')
-        await state.set_state(Merch.username)
+        if info_merch.category == 'cup':
+            await callback.message.answer(text=f'Как вас зовут?')
+            await state.set_state(Merch.username)
+        elif info_merch.category == 'hoodie':
+            await callback.message.answer(text=f'Выберите размер hoodie',
+                                          reply_markup=keyboard_size_hoodie())
     else:
         await callback.message.answer(text='Оплата не прошла. Повторите попытку')
         await state.set_state(default_state)
+
+
+@router.callback_query(F.data.startswith('size_'))
+async def get_size_hoodie(callback: CallbackQuery, state: FSMContext):
+    logging.info('get_size_hoodie')
+    await callback.answer()
+    size = callback.data.split('_')[1]
+    await state.update_data(size=size)
+    user_dict[callback.message.chat.id] = await state.get_data()
+    id_order = user_dict[callback.message.chat.id]['id_order']
+    await update_size_order(id_order=id_order, size=size)
+    await callback.message.answer(text=f'Как вас зовут?')
+    await state.set_state(Merch.username)
 
 
 @router.callback_query(F.data.startswith('cancel_pay_for_'))
@@ -342,7 +379,8 @@ async def process_confirm_phone(callback: CallbackQuery, state: FSMContext, bot:
     """Введенный номер телефона подтвержден. Запрос города"""
     logging.info(f'process_confirm_phone: {callback.message.chat.id}')
     await bot.delete_message(chat_id=callback.message.chat.id, message_id=callback.message.message_id)
-    await callback.message.answer(text=f'Укажите адрес доставки',
+    await callback.message.answer(text=f'Для точной доставки нам нужны данные получителя: фио, телефон для уведомления,'
+                                       f' адрес и город, наш партнер по доставке CDEK ✅',
                                   reply_markup=keyboards_main())
     await state.set_state(Merch.address_delivery)
 
@@ -419,20 +457,31 @@ async def confirm_order(callback: CallbackQuery, state: FSMContext, bot: Bot):
         address_delivery = user_info.address_delivery
         merch_info = await get_merch(id_merch=id_merch)
         order_info = await get_order(id_order=id_order)
+
         await callback.message.edit_text(text=f'Благодарим вас за заказ!\n'
                                               f'Наш merch {merch_info.title} уже мчит к вам на адрес '
                                               f'{address_delivery}.',
                                          reply_markup=None)
         for admin_id in config.tg_bot.admin_ids.split(','):
             try:
-                await bot.send_message(chat_id=admin_id,
-                                       text=f'<b>Заказ № {order_info.id_order}:</b>\n'
-                                            f'<i>Заказчик:</i> {user_info.name} / @{user_info.username}\n'
-                                            f'<i>Номер телефона</i>: {user_info.phone}\n'
-                                            f'<i>Мерч:</i> {merch_info.title}\n'
-                                            f'<i>Адрес:</i> {order_info.address_delivery}',
-                                       parse_mode='html')
+                if merch_info.category == 'hoodie':
+                    size = order_info.size
+                    await bot.send_message(chat_id=admin_id,
+                                           text=f'<b>Заказ № {order_info.id_order}:</b>\n'
+                                                f'<i>Заказчик:</i> {user_info.name} / @{user_info.username}\n'
+                                                f'<i>Номер телефона</i>: {user_info.phone}\n'
+                                                f'<i>Мерч:</i> {merch_info.title}\n'
+                                                f'<i>Размер:</i> {size}'
+                                                f'<i>Адрес:</i> {order_info.address_delivery}',
+                                           parse_mode='html')
+                else:
+                    await bot.send_message(chat_id=admin_id,
+                                           text=f'<b>Заказ № {order_info.id_order}:</b>\n'
+                                                f'<i>Заказчик:</i> {user_info.name} / @{user_info.username}\n'
+                                                f'<i>Номер телефона</i>: {user_info.phone}\n'
+                                                f'<i>Мерч:</i> {merch_info.title}\n'
+                                                f'<i>Адрес:</i> {order_info.address_delivery}',
+                                           parse_mode='html')
             except:
                 pass
         await state.set_state(default_state)
-

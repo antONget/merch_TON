@@ -8,6 +8,7 @@ class TgBot:
     admin_ids: str
     support: str
     xrocket_token: str
+    community: str
 
 
 @dataclass
@@ -21,4 +22,5 @@ def load_config(path: str = None) -> Config:
     return Config(tg_bot=TgBot(token=env('BOT_TOKEN'),
                                admin_ids=env('ADMIN_IDS'),
                                support=env('SUPPORT'),
-                               xrocket_token=env('XROCKET_TOKEN')))
+                               xrocket_token=env('XROCKET_TOKEN'),
+                               community=env('COMMUNITY')))

@@ -85,6 +85,20 @@ async def update_address_delivery_order(id_order: int, address_delivery: str):
             await session.commit()
 
 
+async def update_size_order(id_order: int, size: str):
+    """
+    Обновляем адрес заказа
+    :param id_order:
+    :param size:
+    :return:
+    """
+    async with async_session() as session:
+        order: Order = await session.scalar(select(Order).where(Order.id_order == id_order))
+        if order:
+            order.size = size
+            await session.commit()
+
+
 async def get_order(id_order: int):
     """
     Получить информацию о заказе
