@@ -6,7 +6,6 @@ from aiogram.fsm.state import State, StatesGroup, default_state
 
 from config_data.config import Config, load_config
 from database.requests import get_all_order, get_merch, get_user
-from keyboards.keyboards_add_merch import keyboard_add_merch
 from filter.admin_filter import check_super_admin
 from datetime import datetime
 

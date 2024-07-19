@@ -24,9 +24,9 @@ def keyboards_card_merch_anon(list_merch: list, block: int):
 
 def keyboard_size_hoodie_anon():
     logging.info("keyboard_size_hoodie_anon")
-    button_1 = InlineKeyboardButton(text='L', callback_data=f'anonsize_L')
-    button_2 = InlineKeyboardButton(text='XL', callback_data=f'anonsize_XL')
-    button_3 = InlineKeyboardButton(text='XXL', callback_data=f'anonsize_XXL')
+    button_1 = InlineKeyboardButton(text='M', callback_data=f'anonsize_M')
+    button_2 = InlineKeyboardButton(text='L', callback_data=f'anonsize_L')
+    button_3 = InlineKeyboardButton(text='XL', callback_data=f'anonsize_XL')
     keyboard = InlineKeyboardMarkup(inline_keyboard=[[button_1, button_2, button_3]], )
     return keyboard
 

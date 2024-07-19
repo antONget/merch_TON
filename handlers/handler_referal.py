@@ -33,11 +33,11 @@ class Merch(StatesGroup):
 
 
 @router.message(F.text == 'referral program 💵🥂')
-async def press_button_referal(message: Message, state: FSMContext) -> None:
+async def press_button_refer(message: Message, state: FSMContext) -> None:
     """
     Получение реф ссылки
     """
-    logging.info("press_button_referal")
+    logging.info("press_button_refer")
     await state.set_state(default_state)
     await message.answer(text=f'Размести торговую карточку в своем комьюнити/группе и получай комиссию 20% с каждой'
                               f' покупки моментально на свой кошелек 😉',
@@ -45,8 +45,8 @@ async def press_button_referal(message: Message, state: FSMContext) -> None:
 
 
 @router.callback_query(F.data.startswith('refer'))
-async def process_referal(callback: CallbackQuery, bot: Bot):
-    logging.info(f'process_referal: {callback.message.chat.id}')
+async def process_refer(callback: CallbackQuery, bot: Bot):
+    logging.info(f'process_refer: {callback.message.chat.id}')
     link = await create_start_link(bot=bot, payload=str(callback.message.chat.id), encode=True)
     await callback.message.answer(text=f'Ваша реферальная ссылка:\n'
                                        f'{link}\n\n'

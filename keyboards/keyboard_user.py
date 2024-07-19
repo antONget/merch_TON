@@ -13,7 +13,7 @@ def keyboards_main() -> ReplyKeyboardMarkup:
     button_4 = KeyboardButton(text='support 💙')
     button_5 = KeyboardButton(text='community 👨‍🎤')
     button_7 = KeyboardButton(text='referral program 💵🥂')
-    keyboard = ReplyKeyboardMarkup(keyboard=[[button_1], [button_2], [button_6], [button_8], [button_3], [button_7],
+    keyboard = ReplyKeyboardMarkup(keyboard=[[button_1], [button_2], [button_6], [button_8], [button_3, button_7],
                                              [button_4, button_5]],
                                    resize_keyboard=True)
     return keyboard
@@ -105,18 +105,18 @@ def keyboard_confirm_order(id_order: int):
 
 def keyboard_size_hoodie():
     logging.info("confirm_pay")
-    button_1 = InlineKeyboardButton(text='L', callback_data=f'size_L')
-    button_2 = InlineKeyboardButton(text='XL', callback_data=f'size_XL')
-    button_3 = InlineKeyboardButton(text='XXL', callback_data=f'size_XXL')
+    button_1 = InlineKeyboardButton(text='M', callback_data=f'size_M')
+    button_2 = InlineKeyboardButton(text='L', callback_data=f'size_L')
+    button_3 = InlineKeyboardButton(text='XL', callback_data=f'size_XL')
     keyboard = InlineKeyboardMarkup(inline_keyboard=[[button_1, button_2, button_3]], )
     return keyboard
 
 
 def keyboard_size_hoodie1():
     logging.info("confirm_pay")
-    button_1 = InlineKeyboardButton(text='L', callback_data=f'size1_L')
-    button_2 = InlineKeyboardButton(text='XL', callback_data=f'size1_XL')
-    button_3 = InlineKeyboardButton(text='XXL', callback_data=f'size1_XXL')
+    button_1 = InlineKeyboardButton(text='M', callback_data=f'size1_M')
+    button_2 = InlineKeyboardButton(text='L', callback_data=f'size1_L')
+    button_3 = InlineKeyboardButton(text='XL', callback_data=f'size1_XL')
     keyboard = InlineKeyboardMarkup(inline_keyboard=[[button_1, button_2, button_3]], )
     return keyboard
 
