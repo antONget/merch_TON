@@ -186,7 +186,7 @@ async def process_paying(callback: CallbackQuery, state: FSMContext):
                 await callback.message.answer(text=f'Отправляем 20% {info_merch.amount * 0.2} TON'
                                                    f'{(await get_user(id_tg=callback.message.chat.id)).referer_id}')
         else:
-            await callback.message.answer(text='Отправляем в казначейство anon 20% {info_merch.amount * 0.2} TON')
+            await callback.message.answer(text=f'Отправляем в казначейство anon 20% {info_merch.amount * 0.2} TON')
             # !!! перевод комиссии на кошелек за приобретение merch anon
         await state.update_data(id_order=count_order)
         data = {"id_order": count_order, "id_tg": callback.message.chat.id, "id_merch": id_merch, "count": 1,
