@@ -183,10 +183,10 @@ async def process_paying(callback: CallbackQuery, state: FSMContext):
         if not info_merch.category == 'anon':
             if not (await get_user(id_tg=callback.message.chat.id)).referer_id == 0:
                 # перевод комиссии по id реферера
-                await callback.message.answer(text=f'Отправляем 20% '
+                await callback.message.answer(text=f'Отправляем 20% {info_merch.amount * 0.2} TON'
                                                    f'{(await get_user(id_tg=callback.message.chat.id)).referer_id}')
         else:
-            await callback.message.answer(text='Отправляем в казначейство anon 20%')
+            await callback.message.answer(text='Отправляем в казначейство anon 20% {info_merch.amount * 0.2} TON')
             # !!! перевод комиссии на кошелек за приобретение merch anon
         await state.update_data(id_order=count_order)
         data = {"id_order": count_order, "id_tg": callback.message.chat.id, "id_merch": id_merch, "count": 1,
