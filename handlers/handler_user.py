@@ -1,10 +1,10 @@
 from aiogram import Router, F, Bot
 from aiogram.types import Message, CallbackQuery, InputMediaPhoto
-from aiogram.filters import CommandStart, or_f
+from aiogram.filters import CommandStart, or_f, CommandObject
 from aiogram.filters import StateFilter
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup, default_state
-
+from aiogram.utils.deep_linking import create_start_link, decode_payload
 from keyboards.keyboard_user import keyboards_main, keyboards_get_contact, keyboard_confirm_phone, \
     keyboard_confirm_order, keyboard_confirm_pay, keyboards_card_merch_new, keyboard_create_merch, keyboard_pay_custom, \
     keyboard_size_hoodie, keyboard_size_hoodie1
@@ -35,15 +35,20 @@ class Merch(StatesGroup):
 
 
 @router.message(CommandStart())
-async def process_start_command_user(message: Message, state: FSMContext) -> None:
+async def process_start_command_user(message: Message, state: FSMContext, command: CommandObject) -> None:
     """
     Запуск бота пользователем (ввод команды /start)
     """
     logging.info(f"process_start_command_user {message.chat.id}")
     await state.set_state(default_state)
-
-    data = {"id_tg": message.chat.id, "username": message.from_user.username, "name": message.from_user.first_name,
-            "phone": "None", "address_delivery": "None"}
+    args = command.args
+    if args:
+        referer_id = int(decode_payload(args))
+        data = {"id_tg": message.chat.id, "username": message.from_user.username, "name": message.from_user.first_name,
+                "phone": "None", "address_delivery": "None", "referer_id": referer_id}
+    else:
+        data = {"id_tg": message.chat.id, "username": message.from_user.username, "name": message.from_user.first_name,
+                "phone": "None", "address_delivery": "None"}
     await add_user(data=data)
     await message.answer(text=f'Привет! Мы - команда One🫶🏻\n\n'
                               f'У нас отлично получается создавать стильный и качественный мерч, который мы быстро'
@@ -149,23 +154,29 @@ async def process_custom(callback: CallbackQuery, state: FSMContext, bot: Bot):
 async def get_file_custom(message: Message, bot: Bot, state: FSMContext):
     logging.info(f'get_file_custom: {message.chat.id}')
     if message.photo:
+        i = 0
         for admin_id in config.tg_bot.admin_ids.split(','):
             try:
                 await bot.send_photo(chat_id=admin_id,
                                      photo=message.photo[-1].file_id,
                                      caption=f'Пользователь @{message.from_user.username} прислал фото для кастомного мерча')
-                await message.answer(text='Фото успешно отправлено менеджеру, осталось оплатить',
-                                     reply_markup=keyboard_pay_custom())
+                i += 1
+                if i == 1:
+                    await message.answer(text='Фото успешно отправлено менеджеру, осталось оплатить',
+                                         reply_markup=keyboard_pay_custom())
             except:
                 await message.answer(text='Фото не отправлено, обратитесь в поддержку')
     if message.document:
+        i = 0
         for admin_id in config.tg_bot.admin_ids.split(','):
             try:
                 await bot.send_document(chat_id=admin_id,
                                         document=message.document.file_id,
                                         caption=f'Пользователь @{message.from_user.username} прислал файл для кастомного мерча')
-                await message.answer(text='Фото успешно отправлено менеджеру, осталось оплатить',
-                                     reply_markup=keyboard_pay_custom())
+                i += 1
+                if i == 1:
+                    await message.answer(text='Фото успешно отправлено менеджеру, осталось оплатить',
+                                         reply_markup=keyboard_pay_custom())
             except:
                 await message.answer(text='Фото не отправлено, обратитесь в поддержку')
 
@@ -345,8 +356,17 @@ async def process_paying(callback: CallbackQuery, state: FSMContext):
         pay = False
     if pay:
         await callback.message.answer(text='Оплата прошла успешно')
+
         count_order = len(await get_all_order()) + 1
         info_merch = await get_merch(id_merch=id_merch)
+        if not info_merch.category == 'anon':
+            if not (await get_user(id_tg=callback.message.chat.id)).referer_id == 0:
+                # перевод комиссии по id реферера
+                await callback.message.answer(text=f'Отправляем 20% '
+                                                   f'{(await get_user(id_tg=callback.message.chat.id)).referer_id}')
+        else:
+            pass
+            # !!! перевод комиссии на кошелек за приобретение merch anon
         await state.update_data(id_order=count_order)
         data = {"id_order": count_order, "id_tg": callback.message.chat.id, "id_merch": id_merch, "count": 1,
                 "cost": info_merch.amount, "address_delivery": "None",

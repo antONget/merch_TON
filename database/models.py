@@ -24,6 +24,7 @@ class User(Base):
     address_delivery: Mapped[str] = mapped_column(String(100))
     invoice_id: Mapped[int] = mapped_column(Integer, default=0)
     status: Mapped[str] = mapped_column(String(20), default='None')
+    referer_id: Mapped[int] = mapped_column(Integer, default=0)
 
 
 class Merch(Base):
