@@ -6,9 +6,8 @@ from aiogram.fsm.state import State, StatesGroup, default_state
 
 from config_data.config import Config, load_config
 from database.requests import get_all_merch, add_merch
-from keyboards.keyboards_add_merch import keyboard_add_merch
+from keyboards.keyboards_add_merch import keyboard_add_merch, keyboard_add_merch_anon
 from filter.admin_filter import check_super_admin
-
 
 
 import logging
@@ -38,6 +37,7 @@ async def process_create_merch(message: Message, state: FSMContext) -> None:
 
 
 @router.callback_query(F.data.startswith('add_merch_'))
+@router.callback_query(F.data.startswith('anonadd_merch_'))
 async def process_create_title_merch(callback: CallbackQuery, state: FSMContext) -> None:
     """
     Добавление названия merch
@@ -45,6 +45,11 @@ async def process_create_title_merch(callback: CallbackQuery, state: FSMContext)
     logging.info(f"process_create_title_merch {callback.message.chat.id}")
     create_category = callback.data.split('_')[2]
     await state.update_data(create_category=create_category)
+    if create_category == 'anon':
+        await callback.message.answer(text='Выберите категорию создаваемого merch',
+                                      reply_markup=keyboard_add_merch_anon())
+        return
+    await state.update_data(create_product=create_category)
     await callback.message.edit_text(text='Пришлите название merch, для его идентификации.'
                                           ' Например: Кружка черная (blue TON)',
                                      reply_markup=None)
@@ -99,9 +104,11 @@ async def process_add_merch(message: Message, state: FSMContext) -> None:
     user_dict[message.chat.id] = await state.get_data()
     id_merch = len(await get_all_merch()) + 1
     category = user_dict[message.chat.id]['create_category']
+    product = user_dict[message.chat.id]['create_product']
     title = user_dict[message.chat.id]['create_title']
     amount = user_dict[message.chat.id]['create_amount']
-    data = {"id_merch": id_merch, "category": category, "title": title, "image": photo, 'amount': amount}
+    data = {"id_merch": id_merch, "category": category, "product": product,
+            "title": title, "image": photo, 'amount': amount}
     await add_merch(data=data)
     await message.answer(text='Merch успешно добавлен в базу')
     await state.set_state(default_state)

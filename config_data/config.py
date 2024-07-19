@@ -9,7 +9,7 @@ class TgBot:
     support: str
     xrocket_token: str
     community: str
-
+    test_amount: int
 
 @dataclass
 class Config:
@@ -23,4 +23,5 @@ def load_config(path: str = None) -> Config:
                                admin_ids=env('ADMIN_IDS'),
                                support=env('SUPPORT'),
                                xrocket_token=env('XROCKET_TOKEN'),
-                               community=env('COMMUNITY')))
+                               community=env('COMMUNITY'),
+                               test_amount=env('TEST_AMOUNT')))

@@ -12,7 +12,7 @@ from config_data.config import Config, load_config
 from database.requests import get_merch, get_all_order, add_order, add_user, update_name_user,\
     update_phone_user, update_address_delivery_user, update_address_delivery_order, get_user, get_order,\
     get_merch_category, update_user_data, update_size_order
-from filter.filter import validate_russian_phone_number
+from datetime import datetime
 from cryptoh.CryptoHelper import XRocketPayStatus, XRocketPayCurrency, x_roket_pay
 
 
@@ -193,7 +193,7 @@ async def process_create_pay(callback: CallbackQuery, state: FSMContext, bot: Bo
             return
     # !!! REPLACE TEST AMOUNT TO
     merch = await get_merch(id_merch=id_merch)
-    amount = merch.amount / 10000
+    amount = merch.amount / int(config.tg_bot.test_amount)
     invoice_id, link = await x_roket_pay.create_invoice(amount, currency=XRocketPayCurrency.ton,
                                                         description='Pay for our merch!')
 
@@ -308,7 +308,7 @@ async def process_bay_merch(callback: CallbackQuery, state: FSMContext, bot: Bot
     id_merch = user_dict[callback.message.chat.id]['id_merch']
     merch = await get_merch(id_merch=id_merch)
     # !!! REPLACE TEST AMOUNT TO
-    amount = merch.amount / 10000
+    amount = merch.amount / int(config.tg_bot.test_amount)
     invoice_id, link = await x_roket_pay.create_invoice(amount, currency=XRocketPayCurrency.ton,
                                                         description='Pay for our merch!')
 
@@ -349,11 +349,12 @@ async def process_paying(callback: CallbackQuery, state: FSMContext):
         info_merch = await get_merch(id_merch=id_merch)
         await state.update_data(id_order=count_order)
         data = {"id_order": count_order, "id_tg": callback.message.chat.id, "id_merch": id_merch, "count": 1,
-                "cost": info_merch.amount, "address_delivery": "None"}
+                "cost": info_merch.amount, "address_delivery": "None",
+                "date_order": datetime.today().strftime('%d/%m/%Y')}
         await add_order(data=data)
 
         await callback.message.answer(
-            text=f'Для точной доставки нам нужны данные получителя: фио, телефон для уведомления,'
+            text=f'Для точной доставки нам нужны данные получателя: фио, телефон для уведомления,'
                  f' адрес и город, наш партнер по доставке CDEK ✅',
             reply_markup=keyboards_main())
         await state.set_state(Merch.address_delivery)
@@ -376,7 +377,8 @@ async def process_paying(callback: CallbackQuery, state: FSMContext):
 
 
 @router.callback_query(F.data.startswith('cancel_pay_for_'))
-async def cancel_pay_for(callback: CallbackQuery, state: FSMContext):
+async def cancel_pay_for(callback: CallbackQuery, state: FSMContext, bot: Bot):
+    await bot.delete_message(chat_id=callback.message.chat.id, message_id=callback.message.message_id)
     await callback.answer('Отменено', show_alert=True)
     await state.clear()
 
@@ -517,18 +519,16 @@ async def get_address_delivery(message: Message, state: FSMContext, bot: Bot):
                 await bot.send_message(chat_id=admin_id,
                                        text=f'<b>Заказ № {order_info.id_order}:</b>\n'
                                             f'<i>Заказчик:</i> {user_info.name} / @{user_info.username}\n'
-                                            f'<i>Номер телефона</i>: {user_info.phone}\n'
                                             f'<i>Мерч:</i> {merch_info.title}\n'
                                             f'<i>Размер:</i> {size}'
-                                            f'<i>Адрес:</i> {order_info.address_delivery}',
+                                            f'<i>Контактные данные:</i> {order_info.address_delivery}',
                                        parse_mode='html')
             else:
                 await bot.send_message(chat_id=admin_id,
                                        text=f'<b>Заказ № {order_info.id_order}:</b>\n'
                                             f'<i>Заказчик:</i> {user_info.name} / @{user_info.username}\n'
-                                            f'<i>Номер телефона</i>: {user_info.phone}\n'
                                             f'<i>Мерч:</i> {merch_info.title}\n'
-                                            f'<i>Адрес:</i> {order_info.address_delivery}',
+                                            f'<i>Контактные данные:</i> {order_info.address_delivery}',
                                        parse_mode='html')
         except:
             pass
