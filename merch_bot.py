@@ -3,7 +3,7 @@ import logging
 
 from aiogram import Bot, Dispatcher
 from config_data.config import Config, load_config
-from handlers import handler_user, other_handlers
+from handlers import handler_user, handler_add_merch, handler_anon_merch, other_handlers
 
 # Инициализируем logger
 logger = logging.getLogger(__name__)
@@ -15,8 +15,8 @@ async def main():
     # Конфигурируем логирование
     logging.basicConfig(
         level=logging.INFO,
-        filename="py_log.log",
-        filemode='w',
+        # filename="py_log.log",
+        # filemode='w',
         format='%(filename)s:%(lineno)d #%(levelname)-8s '
                '[%(asctime)s] - %(name)s - %(message)s')
 
@@ -31,6 +31,8 @@ async def main():
     dp = Dispatcher()
     # Регистрируем router в диспетчере
     dp.include_router(handler_user.router)
+    dp.include_router(handler_add_merch.router)
+    dp.include_router(handler_anon_merch.router)
     dp.include_router(other_handlers.router)
 
     # Пропускаем накопившиеся update и запускаем polling

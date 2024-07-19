@@ -6,6 +6,18 @@ from sqlalchemy import select, update
 
 
 # МЕРЧ
+async def add_merch(data: dict):
+    """
+    Добавление нового пользователя
+    :param data:
+    :return:
+    """
+    logging.info(f"add_merch")
+    async with async_session() as session:
+        session.add(Merch(**data))
+        await session.commit()
+
+
 async def get_all_merch():
     """
     Получаем всю информацию о товарах из БД

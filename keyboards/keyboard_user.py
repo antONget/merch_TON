@@ -8,10 +8,13 @@ def keyboards_main() -> ReplyKeyboardMarkup:
     button_1 = KeyboardButton(text='hoodie 👘')
     button_2 = KeyboardButton(text='cup ☕️')
     button_6 = KeyboardButton(text='flag 🚩')
+    button_8 = KeyboardButton(text='anon merch 🎱')
     button_3 = KeyboardButton(text='create your merch 🎨')
     button_4 = KeyboardButton(text='support 💙')
     button_5 = KeyboardButton(text='community 👨‍🎤')
-    keyboard = ReplyKeyboardMarkup(keyboard=[[button_1], [button_2], [button_6], [button_3], [button_4, button_5]],
+    # button_7 = KeyboardButton(text='referral program 💵🥂')
+    keyboard = ReplyKeyboardMarkup(keyboard=[[button_1], [button_2], [button_6], [button_8], [button_3],
+                                             [button_4, button_5]],
                                    resize_keyboard=True)
     return keyboard
 
@@ -26,6 +29,14 @@ def keyboard_create_merch():
                                     callback_data='custom_flag')
     keyboard = InlineKeyboardMarkup(inline_keyboard=[[button_1], [button_2], [button_3]],)
     return keyboard
+
+
+# def keyboard_refer():
+#     logging.info("keyboard_refer")
+#     button_1 = InlineKeyboardButton(text='Получить реферальную ссылку',
+#                                     callback_data='refer')
+#     keyboard = InlineKeyboardMarkup(inline_keyboard=[[button_1]])
+#     return keyboard
 
 
 def keyboard_pay_custom():

@@ -71,6 +71,36 @@ async def press_button_support(message: Message, state: FSMContext) -> None:
     await message.answer(text=f'Переходите в нашу группу. Там вы найдете много полезной информации'
                               f' {config.tg_bot.community}')
 
+# @router.message(F.text == 'anon merch 🎱')
+# async def press_button_referal(message: Message, state: FSMContext) -> None:
+#     """
+#     Получение реф ссылки
+#     """
+#     logging.info("press_button_referal")
+#     await state.set_state(default_state)
+#     await message.answer(text=f'Размести торговую карточку в своем комьюнити/группе и получай комиссию 20% с каждой'
+#                               f' покупки моментально на свой кошелек 😉',
+#                          reply_markup=keyboard_referal())
+
+# @router.message(F.text == 'referral program 💵🥂')
+# async def press_button_referal(message: Message, state: FSMContext) -> None:
+#     """
+#     Получение реф ссылки
+#     """
+#     logging.info("press_button_referal")
+#     await state.set_state(default_state)
+#     await message.answer(text=f'Размести торговую карточку в своем комьюнити/группе и получай комиссию 20% с каждой'
+#                               f' покупки моментально на свой кошелек 😉',
+#                          reply_markup=keyboard_referal())
+
+
+# @router.callback_query(F.data.startswith('referal'))
+# async def process_referal(callback: CallbackQuery, state: FSMContext, bot: Bot):
+#     logging.info(f'process_referal: {callback.message.chat.id}')
+#     link = await get_referral_link(callback.message.from_user.id)
+#     await callback.message.answer(text=f'Ваша реферальная ссылка:\n'
+#                                        f'{link}')
+
 
 @router.message(F.text == 'hoodie 👘')
 async def select_category_hoodie(message: Message, state: FSMContext):
