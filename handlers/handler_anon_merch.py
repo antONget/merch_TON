@@ -157,7 +157,7 @@ async def process_bay_merch(callback: CallbackQuery, state: FSMContext, bot: Bot
 
 
 @router.callback_query(F.data.startswith('anonconfirm_pay_for_'))
-async def process_paying(callback: CallbackQuery, state: FSMContext):
+async def process_paying(callback: CallbackQuery, state: FSMContext, bot: Bot):
     logging.info('Processing_paying')
     await callback.answer()
     user_dict[callback.message.chat.id] = await state.get_data()
@@ -183,11 +183,30 @@ async def process_paying(callback: CallbackQuery, state: FSMContext):
         if not info_merch.category == 'anon':
             if not (await get_user(id_tg=callback.message.chat.id)).referer_id == 0:
                 # перевод комиссии по id реферера
-                await callback.message.answer(text=f'Отправляем 20% {info_merch.amount * 0.2} TON'
-                                                   f'{(await get_user(id_tg=callback.message.chat.id)).referer_id}')
+                await x_roket_pay.transfer_funds_with_id(
+                    amount=info_merch.amount * 0.2,
+                    user_id=(await get_user(id_tg=callback.message.chat.id)).referer_id
+                )
+                for admin_id in config.tg_bot.admin_ids.split(','):
+                    try:
+                        await bot.send_message(chat_id=int(admin_id),
+                                               text=f'Отправляем 20% {info_merch.amount * 0.2} TON'
+                                                    f'{(await get_user(id_tg=callback.message.chat.id)).referer_id}')
+                    except:
+                        pass
         else:
-            await callback.message.answer(text=f'Отправляем в казначейство anon 20% {info_merch.amount * 0.2} TON')
+
             # !!! перевод комиссии на кошелек за приобретение merch anon
+            await x_roket_pay.transfer_funds_with_wallet_addr(
+                amount=info_merch.amount * 0.2,
+                wallet_addr=''  # anon wallet address
+            )
+            for admin_id in config.tg_bot.admin_ids.split(','):
+                try:
+                    await bot.send_message(chat_id=int(admin_id),
+                                           text=f'Отправляем в казначейство anon 20% {info_merch.amount * 0.2} TON')
+                except:
+                    pass
         await state.update_data(id_order=count_order)
         data = {"id_order": count_order, "id_tg": callback.message.chat.id, "id_merch": id_merch, "count": 1,
                 "cost": info_merch.amount, "address_delivery": "None",
