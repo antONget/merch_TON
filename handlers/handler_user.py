@@ -529,7 +529,7 @@ async def get_address_delivery(message: Message, state: FSMContext, bot: Bot):
     order_info = await get_order(id_order=id_order)
 
     await message.answer(text=f'Благодарим вас за заказ!\n'
-                              f'Наш merch {merch_info.title} уже мчит к вам на адрес '
+                              f'Наш merch {merch_info.title} уже мчит к вам '
                               f'{order_info.address_delivery}.',
                                   reply_markup=None)
     for admin_id in config.tg_bot.admin_ids.split(','):
