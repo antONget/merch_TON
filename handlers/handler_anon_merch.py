@@ -14,7 +14,7 @@ from cryptoh.CryptoHelper import XRocketPayStatus, XRocketPayCurrency, x_roket_p
 from datetime import datetime
 import logging
 import asyncio
-
+from cryptoh.nanoton import from_nano, to_nano
 
 router = Router()
 user_dict = {}
@@ -180,17 +180,19 @@ async def process_paying(callback: CallbackQuery, state: FSMContext, bot: Bot):
         await callback.message.answer(text='Оплата прошла успешно')
         count_order = len(await get_all_order()) + 1
         info_merch = await get_merch(id_merch=id_merch)
+        logging.info(f"amount: {from_nano(to_nano(info_merch.amount, 'ton') * to_nano(0.2, 'ton'), 'ton')}")
         if not info_merch.category == 'anon':
             if not (await get_user(id_tg=callback.message.chat.id)).referer_id == 0:
                 # перевод комиссии по id реферера
                 await x_roket_pay.transfer_funds_with_id(
-                    amount=info_merch.amount * 0.2,
+                    amount=from_nano(to_nano(info_merch.amount, 'ton') * to_nano(0.2, 'ton'), 'ton'),
                     user_id=(await get_user(id_tg=callback.message.chat.id)).referer_id
                 )
+
                 for admin_id in config.tg_bot.admin_ids.split(','):
                     try:
                         await bot.send_message(chat_id=int(admin_id),
-                                               text=f'Отправляем 20% {info_merch.amount * 0.2} TON'
+                                               text=f'Отправляем 20% {from_nano(to_nano(info_merch.amount, "ton") * to_nano(0.2, "ton"), "ton")} TON'
                                                     f'{(await get_user(id_tg=callback.message.chat.id)).referer_id}')
                     except:
                         pass
@@ -198,13 +200,14 @@ async def process_paying(callback: CallbackQuery, state: FSMContext, bot: Bot):
 
             # !!! перевод комиссии на кошелек за приобретение merch anon
             await x_roket_pay.transfer_funds_with_wallet_addr(
-                amount=info_merch.amount * 0.2,
+                amount=from_nano(to_nano(info_merch.amount) * to_nano(0.2), 'ton'),
                 wallet_addr='EQDBAsSdj5riEKYx42fyJMQIIo2hwcCA5aezuGCBrx-tT2SW'  # anon wallet address
             )
             for admin_id in config.tg_bot.admin_ids.split(','):
                 try:
                     await bot.send_message(chat_id=int(admin_id),
-                                           text=f'Отправляем в казначейство anon 20% {info_merch.amount * 0.2} TON')
+                                           text=f'Отправляем в казначейство anon 20% {from_nano(to_nano(info_merch.amount, "ton") * to_nano(0.2, "ton"), "ton")} TON')
+
                 except:
                     pass
         await state.update_data(id_order=count_order)
