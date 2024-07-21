@@ -76,15 +76,13 @@ async def press_button_support(message: Message, state: FSMContext) -> None:
 
 
 # @router.message(F.text == 'anon merch 🎱')
-# async def press_button_referal(message: Message, state: FSMContext) -> None:
-#     """
-#     Получение реф ссылки
-#     """
-#     logging.info("press_button_referal")
+# async def press_button_anon_category(message: Message, state: FSMContext) -> None:
+#     logging.info("press_button_anon_category")
 #     await state.set_state(default_state)
-#     await message.answer(text=f'Размести торговую карточку в своем комьюнити/группе и получай комиссию 20% с каждой'
-#                               f' покупки моментально на свой кошелек 😉',
-#                          reply_markup=keyboard_referal())
+#     await message.answer(text=f'20% от каждого заказа этой категории мы отправим моментально на кошелек'
+#                               f' казначейства проекта 🖤')
+#     await state.update_data(category='anon')
+#     await show_merch_slider(message=message, state=state)
 
 # @router.message(F.text == 'referral program 💵🥂')
 # async def press_button_referal(message: Message, state: FSMContext) -> None:

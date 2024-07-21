@@ -160,7 +160,7 @@ class XRocketPay:
             :return: True if transfer done else False
         """
 
-        if not self.transaction_will_be_successful(amount=amount, withdrawal=False):
+        if not await self.transaction_will_be_successful(amount=amount, withdrawal=False):
             return False
 
         json = {
@@ -187,7 +187,7 @@ class XRocketPay:
             :return: True if transfer done else False
         """
 
-        if not self.transaction_will_be_successful(amount=amount):
+        if not await self.transaction_will_be_successful(amount=amount):
             return False
 
         json = {
