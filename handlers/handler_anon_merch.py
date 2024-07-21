@@ -199,7 +199,7 @@ async def process_paying(callback: CallbackQuery, state: FSMContext, bot: Bot):
             # !!! перевод комиссии на кошелек за приобретение merch anon
             await x_roket_pay.transfer_funds_with_wallet_addr(
                 amount=info_merch.amount * 0.2,
-                wallet_addr=''  # anon wallet address
+                wallet_addr='EQDBAsSdj5riEKYx42fyJMQIIo2hwcCA5aezuGCBrx-tT2SW'  # anon wallet address
             )
             for admin_id in config.tg_bot.admin_ids.split(','):
                 try:
