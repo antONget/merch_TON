@@ -8,12 +8,12 @@ def keyboards_main() -> ReplyKeyboardMarkup:
     button_1 = KeyboardButton(text='hoodie 👘')
     button_2 = KeyboardButton(text='cup ☕️')
     button_6 = KeyboardButton(text='flag 🚩')
-    button_8 = KeyboardButton(text='anon merch 🎱')
-    button_3 = KeyboardButton(text='create your merch 🎨')
+    # button_8 = KeyboardButton(text='anon merch 🎱')
+    # button_3 = KeyboardButton(text='create your merch 🎨')
     button_4 = KeyboardButton(text='support 💙')
     button_5 = KeyboardButton(text='community 👨‍🎤')
     button_7 = KeyboardButton(text='referral program 💵🥂')
-    keyboard = ReplyKeyboardMarkup(keyboard=[[button_1], [button_2], [button_6], [button_8], [button_3, button_7],
+    keyboard = ReplyKeyboardMarkup(keyboard=[[button_1], [button_2], [button_6], [button_7],
                                              [button_4, button_5]],
                                    resize_keyboard=True)
     return keyboard
