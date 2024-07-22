@@ -372,19 +372,19 @@ async def process_paying(callback: CallbackQuery, state: FSMContext, bot: Bot):
 
         count_order = len(await get_all_order()) + 1
         info_merch = await get_merch(id_merch=id_merch)
-        logging.info(f"amount: {from_nano(to_nano(info_merch.amount, 'ton') * to_nano(0.2, 'ton'), 'ton')}")
+        logging.info(f"amount: {info_merch.amount * 0.2}")
         if not info_merch.category == 'anon':
             if not (await get_user(id_tg=callback.message.chat.id)).referer_id == 0:
                 # перевод комиссии по id реферера
                 await x_roket_pay.transfer_funds_with_id(
-                    amount=from_nano(to_nano(info_merch.amount, 'ton') * to_nano(0.2, 'ton'), 'ton'),
+                    amount=info_merch.amount * 0.2,
                     user_id=(await get_user(id_tg=callback.message.chat.id)).referer_id
                 )
 
                 for admin_id in config.tg_bot.admin_ids.split(','):
                     try:
                         await bot.send_message(chat_id=int(admin_id),
-                                               text=f'Отправляем 20% {from_nano(to_nano(info_merch.amount, "ton") * to_nano(0.2, "ton"), "ton")} TON'
+                                               text=f'Отправляем 20% {info_merch.amount * 0.2} TON'
                                                     f'{(await get_user(id_tg=callback.message.chat.id)).referer_id}')
                     except:
                         pass
@@ -392,13 +392,13 @@ async def process_paying(callback: CallbackQuery, state: FSMContext, bot: Bot):
 
             # !!! перевод комиссии на кошелек за приобретение merch anon
             await x_roket_pay.transfer_funds_with_wallet_addr(
-                amount=from_nano(to_nano(info_merch.amount) * to_nano(0.2), 'ton'),
-                wallet_addr='EQDBAsSdj5riEKYx42fyJMQIIo2hwcCA5aezuGCBrx-tT2SW'  # anon wallet address
+                amount=info_merch.amount * 0.2,
+                wallet_addr='EQDBAsSdj5riEKYx42fyJMQIIo2hwcCA5aezuGCBrx-tT2SW'
             )
             for admin_id in config.tg_bot.admin_ids.split(','):
                 try:
                     await bot.send_message(chat_id=int(admin_id),
-                                           text=f'Отправляем в казначейство anon 20% {from_nano(to_nano(info_merch.amount, "ton") * to_nano(0.2, "ton"), "ton")} TON')
+                                           text=f'Отправляем в казначейство anon 20% {info_merch.amount * 0.2} TON')
 
                 except:
                     pass
