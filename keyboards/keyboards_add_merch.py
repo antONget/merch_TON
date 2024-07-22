@@ -28,5 +28,9 @@ def keyboard_add_merch_anon():
                                     callback_data='anonadd_merch_cup')
     button_3 = InlineKeyboardButton(text='flag 🚩',
                                     callback_data='anonadd_merch_flag')
-    keyboard = InlineKeyboardMarkup(inline_keyboard=[[button_1], [button_2], [button_3]],)
+    button_4 = InlineKeyboardButton(text='T-shirt 👕👚',
+                                    callback_data='anonadd_merch_tshirt')
+    button_5 = InlineKeyboardButton(text='BOXES 🎁',
+                                    callback_data='anonadd_merch_boxes')
+    keyboard = InlineKeyboardMarkup(inline_keyboard=[[button_1], [button_2], [button_3], [button_4], [button_5]],)
     return keyboard
