@@ -11,7 +11,7 @@ from keyboards.keyboard_user import keyboards_main, keyboards_get_contact, keybo
 from config_data.config import Config, load_config
 from database.requests import get_merch, get_all_order, add_order, add_user, update_name_user, \
     update_phone_user, update_address_delivery_user, update_address_delivery_order, get_user, get_order, \
-    get_merch_category, update_user_data, update_size_order
+    get_merch_category, update_user_data, update_size_order, get_merch_product
 from datetime import datetime
 from cryptoh.CryptoHelper import XRocketPayStatus, XRocketPayCurrency, x_roket_pay
 from cryptoh.nanoton import from_nano, to_nano
@@ -125,6 +125,19 @@ async def select_category_flag(message: Message, state: FSMContext):
     await show_merch_slider(message=message, state=state)
 
 
+@router.message(F.text == 'T-shirt 👕👚')
+async def select_category_tshirt(message: Message, state: FSMContext):
+    logging.info(f'select_category_tshirt: {message.chat.id}')
+    await state.update_data(category='tshirt')
+    await show_merch_slider(message=message, state=state)
+
+
+@router.message(F.text == 'BOXES 🎁')
+async def select_category_boxes(message: Message, state: FSMContext):
+    logging.info(f'select_category_boxes: {message.chat.id}')
+    await state.update_data(category='boxes')
+    await show_merch_slider(message=message, state=state)
+
 @router.message(F.text == 'create your merch 🎨')
 async def select_category_hoodie(message: Message):
     logging.info(f'select_category: {message.chat.id}')
@@ -226,7 +239,8 @@ async def show_merch_slider(message: Message, state: FSMContext):
     logging.info(f'show_merch_slider: {message.chat.id}')
     user_dict[message.chat.id] = await state.get_data()
     category = user_dict[message.chat.id]['category']
-    models_merch = await get_merch_category(category_merch=category)
+    # models_merch = await get_merch_category(category_merch=category)
+    models_merch = await get_merch_product(product_merch=category)
     list_merch = []
     for merch in models_merch:
         list_merch.append(merch)
@@ -248,7 +262,8 @@ async def process_forward(callback: CallbackQuery, state: FSMContext):
     logging.info(f'process_forward_game: {callback.message.chat.id}')
     user_dict[callback.message.chat.id] = await state.get_data()
     category = user_dict[callback.message.chat.id]['category']
-    models_merch = await get_merch_category(category_merch=category)
+    # models_merch = await get_merch_category(category_merch=category)
+    models_merch = await get_merch_product(product_merch=category)
     list_merch = []
     for merch in models_merch:
         list_merch.append(merch)
@@ -276,7 +291,8 @@ async def process_back(callback: CallbackQuery, state: FSMContext) -> None:
     logging.info(f'process_back: {callback.message.chat.id}')
     user_dict[callback.message.chat.id] = await state.get_data()
     category = user_dict[callback.message.chat.id]['category']
-    models_merch = await get_merch_category(category_merch=category)
+    # models_merch = await get_merch_category(category_merch=category)
+    models_merch = await get_merch_product(product_merch=category)
     list_merch = []
     for merch in models_merch:
         list_merch.append(merch)

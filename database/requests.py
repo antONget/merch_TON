@@ -59,6 +59,20 @@ async def get_merch_category(category_merch: str):
             return False
 
 
+async def get_merch_product(product_merch: str):
+    """
+    Получить информацию о товаре
+    :param product_merch:
+    :return:
+    """
+    logging.info("get_merch_product")
+    async with async_session() as session:
+        merch: Merch = await session.scalars(select(Merch).where(Merch.product == product_merch))
+        if merch:
+            return merch
+        else:
+            return False
+
 # ORDER
 async def add_order(data: dict):
     """

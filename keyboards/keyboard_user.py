@@ -7,14 +7,16 @@ def keyboards_main() -> ReplyKeyboardMarkup:
     logging.info("keyboards_main")
     button_1 = KeyboardButton(text='hoodie 👘')
     button_2 = KeyboardButton(text='cup ☕️')
-    button_6 = KeyboardButton(text='flag 🚩')
+    button_3 = KeyboardButton(text='flag 🚩')
+    button_4 = KeyboardButton(text='T-shirt 👕👚')
+    button_8 = KeyboardButton(text='BOXES 🎁')
     # button_8 = KeyboardButton(text='anon merch 🎱')
     # button_3 = KeyboardButton(text='create your merch 🎨')
-    button_4 = KeyboardButton(text='support 💙')
-    button_5 = KeyboardButton(text='community 👨‍🎤')
+    button_5 = KeyboardButton(text='support 💙')
+    button_6 = KeyboardButton(text='community 👨‍🎤')
     button_7 = KeyboardButton(text='referral program 💵🥂')
-    keyboard = ReplyKeyboardMarkup(keyboard=[[button_1], [button_2], [button_6], [button_7],
-                                             [button_4, button_5]],
+    keyboard = ReplyKeyboardMarkup(keyboard=[[button_1], [button_2], [button_3], [button_4], [button_8],
+                                             [button_5, button_6], [button_7]],
                                    resize_keyboard=True)
     return keyboard
 
