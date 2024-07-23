@@ -138,95 +138,99 @@ async def select_category_boxes(message: Message, state: FSMContext):
     await state.update_data(category='boxes')
     await show_merch_slider(message=message, state=state)
 
-@router.message(F.text == 'create your merch 🎨')
-async def select_category_hoodie(message: Message):
-    logging.info(f'select_category: {message.chat.id}')
-    await message.answer(text='На чем бы вы хотели сделать merch',
-                         reply_markup=keyboard_create_merch())
+# @router.message(F.text == 'create your merch 🎨')
+# async def select_category_hoodie(message: Message):
+#     logging.info(f'select_category: {message.chat.id}')
+#     await message.answer(text='На чем бы вы хотели сделать merch',
+#                          reply_markup=keyboard_create_merch())
 
 
-@router.callback_query(F.data.startswith('custom_'))
-async def process_custom(callback: CallbackQuery, state: FSMContext, bot: Bot):
-    logging.info(f'process_custom: {callback.message.chat.id}')
-    await bot.delete_message(chat_id=callback.message.chat.id, message_id=callback.message.message_id)
-    answer = callback.data.split('_')[1]
-    if answer == 'hoodie':
-        await state.update_data(id_merch=4)
-    elif answer == 'cup':
-        await state.update_data(id_merch=5)
-    elif answer == 'flag':
-        await state.update_data(id_merch=17)
-    await callback.message.answer(text='Отлично теперь пришли фото или файл')
-    await state.set_state(Merch.custom)
+# @router.callback_query(F.data.startswith('custom_'))
+# async def process_custom(callback: CallbackQuery, state: FSMContext, bot: Bot):
+#     logging.info(f'process_custom: {callback.message.chat.id}')
+#     await bot.delete_message(chat_id=callback.message.chat.id, message_id=callback.message.message_id)
+#     answer = callback.data.split('_')[1]
+#     if answer == 'hoodie':
+#         await state.update_data(id_merch=4)
+#     elif answer == 'cup':
+#         await state.update_data(id_merch=5)
+#     elif answer == 'flag':
+#         await state.update_data(id_merch=17)
+#     await callback.message.answer(text='Отлично теперь пришли фото или файл')
+#     await state.set_state(Merch.custom)
 
 
-@router.message(or_f(F.document, F.photo), StateFilter(Merch.custom))
-async def get_file_custom(message: Message, bot: Bot, state: FSMContext):
-    logging.info(f'get_file_custom: {message.chat.id}')
-    if message.photo:
-        i = 0
-        for admin_id in config.tg_bot.admin_ids.split(','):
-            try:
-                await bot.send_photo(chat_id=admin_id,
-                                     photo=message.photo[-1].file_id,
-                                     caption=f'Пользователь @{message.from_user.username} прислал фото для кастомного мерча')
-                i += 1
-                if i == 1:
-                    await message.answer(text='Фото успешно отправлено менеджеру, осталось оплатить',
-                                         reply_markup=keyboard_pay_custom())
-            except:
-                await message.answer(text='Фото не отправлено, обратитесь в поддержку')
-    if message.document:
-        i = 0
-        for admin_id in config.tg_bot.admin_ids.split(','):
-            try:
-                await bot.send_document(chat_id=admin_id,
-                                        document=message.document.file_id,
-                                        caption=f'Пользователь @{message.from_user.username} прислал файл для кастомного мерча')
-                i += 1
-                if i == 1:
-                    await message.answer(text='Фото успешно отправлено менеджеру, осталось оплатить',
-                                         reply_markup=keyboard_pay_custom())
-            except:
-                await message.answer(text='Фото не отправлено, обратитесь в поддержку')
+# @router.message(or_f(F.document, F.photo), StateFilter(Merch.custom))
+# async def get_file_custom(message: Message, bot: Bot, state: FSMContext):
+#     logging.info(f'get_file_custom: {message.chat.id}')
+#     if message.photo:
+#         i = 0
+#         for admin_id in config.tg_bot.admin_ids.split(','):
+#             try:
+#                 await bot.send_photo(chat_id=admin_id,
+#                                      photo=message.photo[-1].file_id,
+#                                      caption=f'Пользователь @{message.from_user.username} прислал фото для кастомного мерча')
+#                 i += 1
+#                 if i == 1:
+#                     await message.answer(text='Фото успешно отправлено менеджеру, осталось оплатить',
+#                                          reply_markup=keyboard_pay_custom())
+#             except:
+#                 await message.answer(text='Фото не отправлено, обратитесь в поддержку')
+#     if message.document:
+#         i = 0
+#         for admin_id in config.tg_bot.admin_ids.split(','):
+#             try:
+#                 await bot.send_document(chat_id=admin_id,
+#                                         document=message.document.file_id,
+#                                         caption=f'Пользователь @{message.from_user.username} прислал файл для кастомного мерча')
+#                 i += 1
+#                 if i == 1:
+#                     await message.answer(text='Фото успешно отправлено менеджеру, осталось оплатить',
+#                                          reply_markup=keyboard_pay_custom())
+#             except:
+#                 await message.answer(text='Фото не отправлено, обратитесь в поддержку')
 
 
-@router.callback_query(F.data.startswith('create_pay'))
-@router.callback_query(F.data.startswith('size1_'))
-async def process_create_pay(callback: CallbackQuery, state: FSMContext, bot: Bot):
-    """
-    Обработка оплаты товара
-    :param callback:
-    :param state:
-    :param bot:
-    :return:
-    """
-    logging.info(f'process_bay_merch: {callback.message.chat.id}')
-    await bot.delete_message(chat_id=callback.message.chat.id, message_id=callback.message.message_id)
-    user_dict[callback.message.chat.id] = await state.get_data()
-    id_merch = user_dict[callback.message.chat.id]['id_merch']
-    if not callback.data.startswith('size1'):
-        await state.set_state(default_state)
-        info_merch = await get_merch(id_merch=id_merch)
-        if info_merch.category == 'hoodie':
-            await callback.message.answer(text=f'Выберите размер hoodie',
-                                          reply_markup=keyboard_size_hoodie1())
-            return
-    # !!! REPLACE TEST AMOUNT TO
-    merch = await get_merch(id_merch=id_merch)
-    amount = merch.amount / int(config.tg_bot.test_amount)
-    invoice_id, link = await x_roket_pay.create_invoice(amount, currency=XRocketPayCurrency.ton,
-                                                        description='Pay for our merch!')
-
-    await update_user_data(**{
-        'id_tg': callback.message.chat.id,
-        'invoice_id': invoice_id,
-        'status': XRocketPayStatus.active
-    })
-
-    await callback.message.answer(f'Оплатите товар по <a href="{link}">ссылке</a>',
-                                  reply_markup=keyboard_confirm_pay(id_merch),
-                                  parse_mode='html')
+# @router.callback_query(F.data.startswith('create_pay'))
+# @router.callback_query(F.data.startswith('size1_'))
+# async def process_create_pay(callback: CallbackQuery, state: FSMContext, bot: Bot):
+#     """
+#     Обработка оплаты товара (если товар требует выбор размера 'hoodie', 'tshirt', 'boxes', то выбираем размер)
+#     :param callback:
+#     :param state:
+#     :param bot:
+#     :return:
+#     """
+#     logging.info(f'process_bay_merch: {callback.message.chat.id}')
+#     await bot.delete_message(chat_id=callback.message.chat.id, message_id=callback.message.message_id)
+#     user_dict[callback.message.chat.id] = await state.get_data()
+#     id_merch = user_dict[callback.message.chat.id]['id_merch']
+#     if not callback.data.startswith('size1'):
+#         await state.set_state(default_state)
+#         info_merch = await get_merch(id_merch=id_merch)
+#         if info_merch.product in ['hoodie', 'tshirt', 'boxes']:
+#             await callback.message.answer(text=f'Выберите размер {info_merch.product}',
+#                                           reply_markup=keyboard_size_hoodie1())
+#             return
+#     else:
+#         size = callback.data.split('_')[1]
+#         await state.update_data(size=size)
+#
+#     # !!! REPLACE TEST AMOUNT TO
+#     merch = await get_merch(id_merch=id_merch)
+#     amount = merch.amount / int(config.tg_bot.test_amount)
+#     invoice_id, link = await x_roket_pay.create_invoice(amount, currency=XRocketPayCurrency.ton,
+#                                                         description='Pay for our merch!')
+#
+#     await update_user_data(**{
+#         'id_tg': callback.message.chat.id,
+#         'invoice_id': invoice_id,
+#         'status': XRocketPayStatus.active
+#     })
+#
+#     await callback.message.answer(f'Оплатите товар по <a href="{link}">ссылке</a>',
+#                                   reply_markup=keyboard_confirm_pay(id_merch),
+#                                   parse_mode='html')
 
 
 async def show_merch_slider(message: Message, state: FSMContext):
@@ -319,20 +323,40 @@ async def process_bay_merch(callback: CallbackQuery, state: FSMContext, bot: Bot
     """
     logging.info(f'process_bay_merch: {callback.message.chat.id}')
     await bot.delete_message(chat_id=callback.message.chat.id, message_id=callback.message.message_id)
+    # if not callback.data.startswith('size1'):
+    #     await state.set_state(default_state)
+    #     info_merch = await get_merch(id_merch=id_merch)
+    #     if info_merch.product in ['hoodie', 'tshirt', 'boxes']:
+    #         await callback.message.answer(text=f'Выберите размер {info_merch.product}',
+    #                                       reply_markup=keyboard_size_hoodie1())
+    #         return
+    # else:
+    #     size = callback.data.split('_')[1]
+    #     await state.update_data(size=size)
+    #     user_dict[callback.message.chat.id] = await state.get_data()
+    #     id_order = user_dict[callback.message.chat.id]['id_order']
+    #     await update_size_order(id_order=id_order, size=size)
     if not callback.data.startswith('size'):
         await state.set_state(default_state)
         id_merch = int(callback.data.split('_')[1])
         await state.update_data(id_merch=id_merch)
         info_merch = await get_merch(id_merch=id_merch)
-        if info_merch.category == 'hoodie':
-            await callback.message.answer(text=f'Выберите размер hoodie',
+        if info_merch.product in ['hoodie', 'tshirt', 'boxes']:
+            await callback.message.answer(text=f'Выберите размер {info_merch.product}',
                                           reply_markup=keyboard_size_hoodie())
             return
+    else:
+        size = callback.data.split('_')[1]
+        await state.update_data(size=size)
+        # user_dict[callback.message.chat.id] = await state.get_data()
+        # id_order = user_dict[callback.message.chat.id]['id_order']
+        # await update_size_order(id_order=id_order, size=size)
     user_dict[callback.message.chat.id] = await state.get_data()
     id_merch = user_dict[callback.message.chat.id]['id_merch']
     merch = await get_merch(id_merch=id_merch)
     # !!! REPLACE TEST AMOUNT TO
     amount = merch.amount / int(config.tg_bot.test_amount)
+    # !!! ВОТ НА ЭТОМ ЭТАПЕ МЕРЧ ВЫБРАН СУММА К ОПЛАТЕ ЕСТЬ НУЖНО ВЫБРАТЬ СПОСОБ ОПЛАТЫ
     invoice_id, link = await x_roket_pay.create_invoice(amount, currency=XRocketPayCurrency.ton,
                                                         description='Pay for our merch!')
 
@@ -372,19 +396,19 @@ async def process_paying(callback: CallbackQuery, state: FSMContext, bot: Bot):
 
         count_order = len(await get_all_order()) + 1
         info_merch = await get_merch(id_merch=id_merch)
-        logging.info(f"amount: {info_merch.amount * 0.2}")
+        logging.info(f"amount: {info_merch.amount * 0.2 / int(config.tg_bot.test_amount)}")
         if not info_merch.category == 'anon':
             if not (await get_user(id_tg=callback.message.chat.id)).referer_id == 0:
                 # перевод комиссии по id реферера
                 await x_roket_pay.transfer_funds_with_id(
-                    amount=info_merch.amount * 0.2,
+                    amount=info_merch.amount * 0.2 / int(config.tg_bot.test_amount),
                     user_id=(await get_user(id_tg=callback.message.chat.id)).referer_id
                 )
 
                 for admin_id in config.tg_bot.admin_ids.split(','):
                     try:
                         await bot.send_message(chat_id=int(admin_id),
-                                               text=f'Отправляем 20% {info_merch.amount * 0.2} TON'
+                                               text=f'Отправляем 20% {info_merch.amount * 0.2} TON '
                                                     f'{(await get_user(id_tg=callback.message.chat.id)).referer_id}')
                     except:
                         pass
@@ -403,7 +427,11 @@ async def process_paying(callback: CallbackQuery, state: FSMContext, bot: Bot):
                 except:
                     pass
         await state.update_data(id_order=count_order)
-        data = {"id_order": count_order, "id_tg": callback.message.chat.id, "id_merch": id_merch, "count": 1,
+        if info_merch.product in ['hoodie', 'tshirt', 'boxes']:
+            size = user_dict[callback.message.chat.id]['size']
+        else:
+            size = "None"
+        data = {"id_order": count_order, "id_tg": callback.message.chat.id, "id_merch": id_merch, "size": size, "count": 1,
                 "cost": info_merch.amount, "address_delivery": "None",
                 "date_order": datetime.today().strftime('%d/%m/%Y')}
         await add_order(data=data)
@@ -568,13 +596,13 @@ async def get_address_delivery(message: Message, state: FSMContext, bot: Bot):
                          reply_markup=None)
     for admin_id in config.tg_bot.admin_ids.split(','):
         try:
-            if merch_info.category == 'hoodie':
+            if merch_info.product in ['hoodie', 'tshirt', 'boxes']:
                 size = order_info.size
                 await bot.send_message(chat_id=int(admin_id),
                                        text=f'<b>Заказ № {order_info.id_order}:</b>\n'
                                             f'<i>Заказчик:</i> {user_info.name} / @{user_info.username}\n'
                                             f'<i>Мерч:</i> {merch_info.title}\n'
-                                            f'<i>Размер:</i> {size}'
+                                            f'<i>Размер:</i> {size}\n'
                                             f'<i>Контактные данные:</i> {order_info.address_delivery}',
                                        parse_mode='html')
             else:
