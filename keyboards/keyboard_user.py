@@ -50,7 +50,7 @@ def keyboard_pay_custom():
 
 
 def keyboards_card_merch_new(list_merch: list, block: int):
-    logging.info("keyboards_card_merch")
+    logging.info(f"keyboards_card_merch {len(list_merch)}, {block}")
     kb_builder = InlineKeyboardBuilder()
     buttons = []
 

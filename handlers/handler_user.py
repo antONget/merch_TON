@@ -321,29 +321,25 @@ async def process_bay_merch(callback: CallbackQuery, state: FSMContext, bot: Bot
     Обработка оплаты товара
     :param callback:
     :param state:
+    :param bot:
     :return:
     """
     logging.info(f'process_bay_merch: {callback.message.chat.id}')
+    # удаляем сообщение вызвавшее коллбек
     await bot.delete_message(chat_id=callback.message.chat.id, message_id=callback.message.message_id)
-    # if not callback.data.startswith('size1'):
-    #     await state.set_state(default_state)
-    #     info_merch = await get_merch(id_merch=id_merch)
-    #     if info_merch.product in ['hoodie', 'tshirt', 'boxes']:
-    #         await callback.message.answer(text=f'Выберите размер {info_merch.product}',
-    #                                       reply_markup=keyboard_size_hoodie1())
-    #         return
-    # else:
-    #     size = callback.data.split('_')[1]
-    #     await state.update_data(size=size)
-    #     user_dict[callback.message.chat.id] = await state.get_data()
-    #     id_order = user_dict[callback.message.chat.id]['id_order']
-    #     await update_size_order(id_order=id_order, size=size)
+    # если коллбек получен не из клавиатуры с выбором размера
     if not callback.data.startswith('size'):
         await state.set_state(default_state)
+        # получаем id merch
         id_merch = int(callback.data.split('_')[1])
+        # сохраняем в state значение id merch
         await state.update_data(id_merch=id_merch)
+        # получаем информацию о merch из БД
         info_merch = await get_merch(id_merch=id_merch)
+        # если продукт выбранного merch что-то из списка
         if info_merch.product in ['hoodie', 'tshirt', 'boxes']:
+            # то предлагаем пользователю выбрать размер
+            # если выбранный товар это boxes
             if info_merch.product == 'boxes':
                 await callback.message.answer(text=f'Выберите размер одежды',
                                               reply_markup=keyboard_size_hoodie())
@@ -352,20 +348,27 @@ async def process_bay_merch(callback: CallbackQuery, state: FSMContext, bot: Bot
                 await callback.message.answer(text=f'Выберите размер {info_merch.product}',
                                               reply_markup=keyboard_size_hoodie())
                 return
+    # если коллбек вызван из клавиатуры выбора размера
     else:
+        # получаем размер выбранного товара
         size = callback.data.split('_')[1]
+        # сохраняем его в state
         await state.update_data(size=size)
         # user_dict[callback.message.chat.id] = await state.get_data()
         # id_order = user_dict[callback.message.chat.id]['id_order']
         # await update_size_order(id_order=id_order, size=size)
+    # формируем оплату
     user_dict[callback.message.chat.id] = await state.get_data()
+    # получаем id merch из state
     id_merch = user_dict[callback.message.chat.id]['id_merch']
+    # получаем информацию о товаре по его id
     merch = await get_merch(id_merch=id_merch)
-    # !!! REPLACE TEST AMOUNT TO
+    # формируем стоимость для оплаты
     amount = merch.amount / int(config.tg_bot.test_amount)
     await state.set_state(default_state)
+    # сохраняем в state стоимость
     await state.update_data(amount=amount)
-
+    # выбор метода оплаты
     await callback.message.answer('Выберите метод оплаты:', reply_markup=keyboard_select_pay_method())
 
 
@@ -380,25 +383,25 @@ async def process_pay_method(callback: CallbackQuery, state: FSMContext):
 
     data = await state.get_data()
 
-    match method:
-        case 'C':
-            invoice_id, link = await crypto_bot_api.create_invoice(amount=data['amount'],
-                                                                   currency=CryptoBotPayCurrency.ton,
-                                                                   description='Pay for our merch!')
-            pay_method = 'CryptoBot'
+    # match method:
+    if method == 'C':
+        invoice_id, link = await crypto_bot_api.create_invoice(amount=data['amount'],
+                                                               currency=CryptoBotPayCurrency.ton,
+                                                               description='Pay for our merch!')
+        pay_method = 'CryptoBot'
 
-        case 'X':
-            invoice_id, link = await x_roket_pay.create_invoice(amount=data['amount'], currency=XRocketPayCurrency.ton,
-                                                                description='Pay for our merch!')
-            pay_method = 'XRocketBot'
+    if method == 'X':
+        invoice_id, link = await x_roket_pay.create_invoice(amount=data['amount'], currency=XRocketPayCurrency.ton,
+                                                            description='Pay for our merch!')
+        pay_method = 'XRocketBot'
 
-        case 'P':
-            pay_method = 'Passed'
-            await callback.message.answer('Отмена..', reply_markup=keyboards_main())
-            await state.clear()
-            return
-        case _:
-            pass
+    if method == 'P':
+        pay_method = 'Passed'
+        await callback.message.answer('Отмена..', reply_markup=keyboards_main())
+        await state.clear()
+        return
+    if method == "_":
+        pass
 
     await update_user_data(**{
         'id_tg': callback.message.chat.id,
@@ -416,11 +419,14 @@ async def process_pay_method(callback: CallbackQuery, state: FSMContext):
 async def process_paying(callback: CallbackQuery, state: FSMContext, bot: Bot):
     logging.info('Processing_paying')
     await callback.answer()
+    # обновляем словарь из state
     user_dict[callback.message.chat.id] = await state.get_data()
+    # получаем id merch
     id_merch = user_dict[callback.message.chat.id]['id_merch']
-
+    # производим проверку оплаты пользователем
     invoice_id = (await get_user(callback.from_user.id)).invoice_id
     pay_method = (await get_user(callback.from_user.id)).pay_method
+    # получаем статус оплаты
     status = await x_roket_pay.check_invoice_payed(invoice_id) if pay_method.startswith(
         'X') else await crypto_bot_api.check_invoice_paid(invoice_id)
     logging.info(f"get_{pay_method}_invoice_{invoice_id}_status: {status} to {callback.from_user.id}")
@@ -434,14 +440,19 @@ async def process_paying(callback: CallbackQuery, state: FSMContext, bot: Bot):
         })
     else:
         pay = False
-
+    # если оплата прошла успешно
+    pay = True
     if pay:
+        # информируем пользователя
         await callback.message.answer(text='Оплата прошла успешно')
-
+        # формируем id заказа как количество всех заказов + 1
         count_order = len(await get_all_order()) + 1
+        # получаем информацию о мерч по его id
         info_merch = await get_merch(id_merch=id_merch)
         logging.info(f"amount: {info_merch.amount * 0.2 / int(config.tg_bot.test_amount)}")
+        # если категория продукта не anon то отправляем комиссию рефереру который пригласил пользователя
         if not info_merch.category == 'anon':
+            # если реферер у пользователя есть
             if (not (await get_user(id_tg=callback.message.chat.id)).referer_id == 0) and \
                     (not (await get_user(id_tg=callback.message.chat.id)).referer_id == None):
                 # перевод комиссии по id реферера
@@ -449,7 +460,7 @@ async def process_paying(callback: CallbackQuery, state: FSMContext, bot: Bot):
                     amount=info_merch.amount * 0.2 / int(config.tg_bot.test_amount),
                     user_id=(await get_user(id_tg=callback.message.chat.id)).referer_id
                 )
-
+                # информируем админа об отправке комиссии
                 for admin_id in config.tg_bot.admin_ids.split(','):
                     try:
                         await bot.send_message(chat_id=int(admin_id),
@@ -457,13 +468,14 @@ async def process_paying(callback: CallbackQuery, state: FSMContext, bot: Bot):
                                                     f'{(await get_user(id_tg=callback.message.chat.id)).referer_id}')
                     except:
                         pass
+        # иначе производим перечисление комиссии на кошелек anon
         else:
-
             # !!! перевод комиссии на кошелек за приобретение merch anon
             await x_roket_pay.transfer_funds_with_wallet_addr(
                 amount=info_merch.amount * 0.2,
                 wallet_addr='EQDBAsSdj5riEKYx42fyJMQIIo2hwcCA5aezuGCBrx-tT2SW'
             )
+            # информируем админа о переводе комисии
             for admin_id in config.tg_bot.admin_ids.split(','):
                 try:
                     await bot.send_message(chat_id=int(admin_id),
@@ -471,21 +483,25 @@ async def process_paying(callback: CallbackQuery, state: FSMContext, bot: Bot):
 
                 except:
                     pass
+        # формируем заказ в БД
         await state.update_data(id_order=count_order)
+        # если продукт это что-то из списка то получаем разсер
         if info_merch.product in ['hoodie', 'tshirt', 'boxes']:
             size = user_dict[callback.message.chat.id]['size']
         else:
             size = "None"
+        # формируем словарь для оплаты
         data = {"id_order": count_order, "id_tg": callback.message.chat.id, "id_merch": id_merch, "size": size,
-                "count": 1,
-                "cost": info_merch.amount, "address_delivery": "None",
+                "count": 1, "cost": info_merch.amount, "address_delivery": "None",
                 "date_order": datetime.today().strftime('%d/%m/%Y')}
+        # добавляем заказ в БД
         await add_order(data=data)
-
+        # запрос ввода адреса отправки merch
         await callback.message.answer(
             text=f'Для точной доставки нам нужны данные получателя: фио, телефон для уведомления,'
                  f' адрес и город, наш партнер по доставке CDEK ✅',
             reply_markup=keyboards_main())
+        # ожидаем ввод пользователя
         await state.set_state(Merch.address_delivery)
     else:
         await callback.message.answer(text='Оплата не прошла. Повторите попытку')
@@ -566,12 +582,17 @@ async def cancel_pay_for(callback: CallbackQuery, state: FSMContext, bot: Bot):
 async def get_address_delivery(message: Message, state: FSMContext, bot: Bot):
     """Получаем имя пользователя. Запрашиваем номер телефона"""
     logging.info(f'get_address_delivery: {message.from_user.id}')
+    # данные о доставке от пользователя
     info_contact = message.text
+    # запоминаем в state контактные данные
     await state.update_data(address_delivery=info_contact)
+    # заносим контактные данные в БД в таблицу пользователя
     await update_address_delivery_user(id_tg=message.chat.id, address_delivery=info_contact)
-
+    # обновляем словарь данных пользователя
     user_dict[message.chat.id] = await state.get_data()
+    # получаем id заказа
     id_order = user_dict[message.chat.id]['id_order']
+    # заносим контактные данные в БД в таблицу заказов
     await update_address_delivery_order(id_order=id_order, address_delivery=info_contact)
     # id_merch = user_dict[message.chat.id]['id_merch']
     # name = user_dict[message.chat.id]['name']
@@ -629,17 +650,22 @@ async def get_address_delivery(message: Message, state: FSMContext, bot: Bot):
     #         await callback.answer(text='Данные подтверждены',
     #                               show_alert=True)
     #         user_dict[callback.message.chat.id] = await state.get_data()
+    # получаем id заказанного товара
     id_merch = user_dict[message.chat.id]['id_merch']
     #         id_order = user_dict[callback.message.chat.id]['id_order']
+    # получаем информацию о пользователе
     user_info = await get_user(id_tg=message.chat.id)
     #         address_delivery = user_info.address_delivery
+    # получаем информацию о товаре
     merch_info = await get_merch(id_merch=id_merch)
+    # получаем информацию о заказе
     order_info = await get_order(id_order=id_order)
-
+    # отправляем пользователю благодарность
     await message.answer(text=f'Благодарим вас за заказ!\n'
                               f'Наш merch {merch_info.title} уже мчит к вам '
                               f'{order_info.address_delivery}.',
                          reply_markup=None)
+    # информируем админа об оплаченном заказе для его отправки пользователю
     for admin_id in config.tg_bot.admin_ids.split(','):
         try:
             if merch_info.product in ['hoodie', 'tshirt', 'boxes']:
