@@ -1,17 +1,17 @@
 from aiogram import Router, F, Bot
 from aiogram.types import Message, CallbackQuery, InputMediaPhoto, LinkPreviewOptions
-from aiogram.filters import CommandStart, or_f
-from aiogram.filters import StateFilter
+# from aiogram.filters import CommandStart, or_f
+# from aiogram.filters import StateFilter
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup, default_state
 from aiogram.utils.deep_linking import create_start_link, decode_payload
 from keyboards.keyboard_referal import keyboard_refer
 from config_data.config import Config, load_config
-from database.requests import get_merch, get_all_order, add_order, add_user, update_name_user,\
-    update_phone_user, update_address_delivery_user, update_address_delivery_order, get_user, get_order,\
-    get_merch_category, update_user_data, update_size_order
-from datetime import datetime
-from cryptoh.CryptoHelper import XRocketPayStatus, XRocketPayCurrency, x_roket_pay
+# from database.requests import get_merch, get_all_order, add_order, add_user, update_name_user,\
+#     update_phone_user, update_address_delivery_user, update_address_delivery_order, get_user, get_order,\
+#     get_merch_category, update_user_data, update_size_order
+# from datetime import datetime
+# from cryptoh.CryptoHelper import XRocketPayStatus, XRocketPayCurrency, x_roket_pay
 
 
 import logging
