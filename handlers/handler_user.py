@@ -441,7 +441,7 @@ async def process_paying(callback: CallbackQuery, state: FSMContext, bot: Bot):
     else:
         pay = False
     # если оплата прошла успешно
-    pay = True
+    # pay = True
     if pay:
         # информируем пользователя
         await callback.message.answer(text='Оплата прошла успешно')
