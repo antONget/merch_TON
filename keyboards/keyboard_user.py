@@ -123,6 +123,15 @@ def keyboard_size_hoodie1():
     return keyboard
 
 
+def keyboard_select_pay_method():
+    logging.info("keyboard_select_pay_method")
+    button_1 = InlineKeyboardButton(text='💸 CryptoBot', callback_data='pay_method_C')
+    button_2 = InlineKeyboardButton(text='🚀 XRocketPay', callback_data='pay_method_X')
+    button_3 = InlineKeyboardButton(text='Отмена', callback_data='pay_method_P')
+
+    keyboard = InlineKeyboardMarkup(inline_keyboard=[[button_1, button_2]], )
+    return keyboard
+
 def keyboard_confirm_pay(merch_id):
     logging.info("confirm_pay_ton")
     button_1 = InlineKeyboardButton(text='Оплачено', callback_data=f'confirm_pay_for_{merch_id}')

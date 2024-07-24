@@ -7,13 +7,14 @@ from aiogram.fsm.state import State, StatesGroup, default_state
 from aiogram.utils.deep_linking import create_start_link, decode_payload
 from keyboards.keyboard_user import keyboards_main, keyboards_get_contact, keyboard_confirm_phone, \
     keyboard_confirm_order, keyboard_confirm_pay, keyboards_card_merch_new, keyboard_create_merch, keyboard_pay_custom, \
-    keyboard_size_hoodie, keyboard_size_hoodie1
+    keyboard_size_hoodie, keyboard_size_hoodie1, keyboard_select_pay_method
 from config_data.config import Config, load_config
 from database.requests import get_merch, get_all_order, add_order, add_user, update_name_user, \
     update_phone_user, update_address_delivery_user, update_address_delivery_order, get_user, get_order, \
     get_merch_category, update_user_data, update_size_order, get_merch_product
 from datetime import datetime
-from cryptoh.CryptoHelper import XRocketPayStatus, XRocketPayCurrency, x_roket_pay
+from cryptoh.XRocketAPI import XRocketPayStatus, XRocketPayCurrency, x_roket_pay
+from cryptoh.CryptoBotAPI import CryptoBotPayCurrency, crypto_bot_api
 from cryptoh.nanoton import from_nano, to_nano
 import logging
 import asyncio
@@ -137,6 +138,7 @@ async def select_category_boxes(message: Message, state: FSMContext):
     logging.info(f'select_category_boxes: {message.chat.id}')
     await state.update_data(category='boxes')
     await show_merch_slider(message=message, state=state)
+
 
 # @router.message(F.text == 'create your merch 🎨')
 # async def select_category_hoodie(message: Message):
@@ -356,18 +358,52 @@ async def process_bay_merch(callback: CallbackQuery, state: FSMContext, bot: Bot
     merch = await get_merch(id_merch=id_merch)
     # !!! REPLACE TEST AMOUNT TO
     amount = merch.amount / int(config.tg_bot.test_amount)
+    await state.set_state(default_state)
+    await state.update_data(amount=amount)
+
+    await callback.message.answer('Выберите метод оплаты:', reply_markup=keyboard_select_pay_method())
+
+
+@router.callback_query(F.data.startswith('pay_method_'))
+async def process_pay_method(callback: CallbackQuery, state: FSMContext):
     # !!! ВОТ НА ЭТОМ ЭТАПЕ МЕРЧ ВЫБРАН СУММА К ОПЛАТЕ ЕСТЬ НУЖНО ВЫБРАТЬ СПОСОБ ОПЛАТЫ
-    invoice_id, link = await x_roket_pay.create_invoice(amount, currency=XRocketPayCurrency.ton,
-                                                        description='Pay for our merch!')
+    await callback.answer('')
+
+    method = callback.data.split('_')[-1]
+
+    invoice_id, link, pay_method = None, None, None
+
+    data = await state.get_data()
+
+    match method:
+        case 'C':
+            invoice_id, link = await crypto_bot_api.create_invoice(amount=data['amount'],
+                                                                   currency=CryptoBotPayCurrency.ton,
+                                                                   description='Pay for our merch!')
+            pay_method = 'CryptoBot'
+
+        case 'X':
+            invoice_id, link = await x_roket_pay.create_invoice(amount=data['amount'], currency=XRocketPayCurrency.ton,
+                                                                description='Pay for our merch!')
+            pay_method = 'XRocketBot'
+
+        case 'P':
+            pay_method = 'Passed'
+            await callback.message.answer('Отмена..', reply_markup=keyboards_main())
+            await state.clear()
+            return
+        case _:
+            pass
 
     await update_user_data(**{
         'id_tg': callback.message.chat.id,
         'invoice_id': invoice_id,
-        'status': XRocketPayStatus.active
+        'status': XRocketPayStatus.active,
+        'pay_method': pay_method,
     })
 
     await callback.message.answer(f'Оплатите товар по <a href="{link}">ссылке</a>',
-                                  reply_markup=keyboard_confirm_pay(id_merch),
+                                  reply_markup=keyboard_confirm_pay(data["id_merch"]),
                                   parse_mode='html')
 
 
@@ -379,8 +415,11 @@ async def process_paying(callback: CallbackQuery, state: FSMContext, bot: Bot):
     id_merch = user_dict[callback.message.chat.id]['id_merch']
 
     invoice_id = (await get_user(callback.from_user.id)).invoice_id
-    status = await x_roket_pay.check_invoice_payed(invoice_id)
-    logging.info(f"get_invoice_{invoice_id}_status: {status} to {callback.from_user.id}")
+    pay_method = (await get_user(callback.from_user.id)).pay_method
+    status = await x_roket_pay.check_invoice_payed(invoice_id) if pay_method.startswith(
+        'X') else await crypto_bot_api.check_invoice_paid(invoice_id)
+    logging.info(f"get_{pay_method}_invoice_{invoice_id}_status: {status} to {callback.from_user.id}")
+
     if status:
         pay = True
         await update_user_data(**{
@@ -388,9 +427,9 @@ async def process_paying(callback: CallbackQuery, state: FSMContext, bot: Bot):
             'invoice_id': 0,
             'status': XRocketPayStatus.passed
         })
-
     else:
         pay = False
+
     if pay:
         await callback.message.answer(text='Оплата прошла успешно')
 
@@ -398,7 +437,8 @@ async def process_paying(callback: CallbackQuery, state: FSMContext, bot: Bot):
         info_merch = await get_merch(id_merch=id_merch)
         logging.info(f"amount: {info_merch.amount * 0.2 / int(config.tg_bot.test_amount)}")
         if not info_merch.category == 'anon':
-            if not (await get_user(id_tg=callback.message.chat.id)).referer_id == 0:
+            if (not (await get_user(id_tg=callback.message.chat.id)).referer_id == 0) and \
+                    (not (await get_user(id_tg=callback.message.chat.id)).referer_id == None):
                 # перевод комиссии по id реферера
                 await x_roket_pay.transfer_funds_with_id(
                     amount=info_merch.amount * 0.2 / int(config.tg_bot.test_amount),
@@ -431,7 +471,8 @@ async def process_paying(callback: CallbackQuery, state: FSMContext, bot: Bot):
             size = user_dict[callback.message.chat.id]['size']
         else:
             size = "None"
-        data = {"id_order": count_order, "id_tg": callback.message.chat.id, "id_merch": id_merch, "size": size, "count": 1,
+        data = {"id_order": count_order, "id_tg": callback.message.chat.id, "id_merch": id_merch, "size": size,
+                "count": 1,
                 "cost": info_merch.amount, "address_delivery": "None",
                 "date_order": datetime.today().strftime('%d/%m/%Y')}
         await add_order(data=data)

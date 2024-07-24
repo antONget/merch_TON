@@ -26,6 +26,9 @@ class User(Base):
     status: Mapped[str] = mapped_column(String(20), default='None')
     referer_id: Mapped[int] = mapped_column(Integer, default=0)
 
+    # CryptoBot or XRocketPay
+    pay_method: Mapped[str] = mapped_column(String, default='')
+
 
 class Merch(Base):
     __tablename__ = 'merch'
