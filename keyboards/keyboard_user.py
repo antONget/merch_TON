@@ -15,7 +15,7 @@ def keyboards_main() -> ReplyKeyboardMarkup:
     button_5 = KeyboardButton(text='support 💙')
     button_6 = KeyboardButton(text='community 👨‍🎤')
     button_7 = KeyboardButton(text='referral program 💵🥂')
-    keyboard = ReplyKeyboardMarkup(keyboard=[[button_1], [button_2], [button_3], [button_4], [button_8],
+    keyboard = ReplyKeyboardMarkup(keyboard=[[button_8], [button_1], [button_2], [button_3], [button_4],
                                              [button_5, button_6], [button_7]],
                                    resize_keyboard=True)
     return keyboard
