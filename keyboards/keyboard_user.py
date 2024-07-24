@@ -132,6 +132,7 @@ def keyboard_select_pay_method():
     keyboard = InlineKeyboardMarkup(inline_keyboard=[[button_1, button_2]], )
     return keyboard
 
+
 def keyboard_confirm_pay(merch_id):
     logging.info("confirm_pay_ton")
     button_1 = InlineKeyboardButton(text='Оплачено', callback_data=f'confirm_pay_for_{merch_id}')
