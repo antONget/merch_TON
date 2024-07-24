@@ -344,9 +344,14 @@ async def process_bay_merch(callback: CallbackQuery, state: FSMContext, bot: Bot
         await state.update_data(id_merch=id_merch)
         info_merch = await get_merch(id_merch=id_merch)
         if info_merch.product in ['hoodie', 'tshirt', 'boxes']:
-            await callback.message.answer(text=f'Выберите размер {info_merch.product}',
-                                          reply_markup=keyboard_size_hoodie())
-            return
+            if info_merch.product == 'boxes':
+                await callback.message.answer(text=f'Выберите размер одежды',
+                                              reply_markup=keyboard_size_hoodie())
+                return
+            else:
+                await callback.message.answer(text=f'Выберите размер {info_merch.product}',
+                                              reply_markup=keyboard_size_hoodie())
+                return
     else:
         size = callback.data.split('_')[1]
         await state.update_data(size=size)
