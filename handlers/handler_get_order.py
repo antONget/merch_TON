@@ -40,7 +40,7 @@ async def process_get_order_today(message: Message, state: FSMContext) -> None:
             i += 1
             info_merch = await get_merch(id_merch=order.id_merch)
             info_user = await get_user(id_tg=order.id_tg)
-            text += f'{i}. {info_merch.title} за {info_merch.amount}TON заказал @{info_user.username} / {info_user.name}\n' \
+            text += f'{i}. {order.date_order} -{info_merch.title} за {info_merch.amount}TON заказал @{info_user.username} / {info_user.name}\n' \
                     f'Контактные данные: {order.address_delivery}\n\n'
         if not i % 20:
             await message.answer(text=text, parse_mode='html')
@@ -48,3 +48,27 @@ async def process_get_order_today(message: Message, state: FSMContext) -> None:
     if not text == '':
         await message.answer(text=text, parse_mode='html')
 
+
+@router.message(F.text == '/my_referal', lambda message: check_super_admin(message.chat.id))
+async def process_get_order_today(message: Message, state: FSMContext) -> None:
+    """
+    Получить все заказы за реферала
+    """
+    logging.info(f"process_create_merch {message.chat.id}")
+    await state.set_state(default_state)
+    # получаем все заказы
+    all_order = await get_all_order()
+    user = await get_user(id_tg=message.chat.id)
+    text = f'<b>Заказы выполненные вашими рефералами:</b>\n\n'
+    i = 0
+    for order in all_order:
+        if order.id_tg == user.referer_id:
+            i += 1
+            info_merch = await get_merch(id_merch=order.id_merch)
+            info_user = await get_user(id_tg=order.id_tg)
+            text += f'{i}. {order.date_order} - {info_merch.title} за {info_merch.amount}TON заказал @{info_user.username} / {info_user.name}\n'
+        if not i % 20:
+            await message.answer(text=text, parse_mode='html')
+            text = ''
+    if not text == '':
+        await message.answer(text=text, parse_mode='html')
