@@ -40,16 +40,19 @@ async def process_get_order_today(message: Message, state: FSMContext) -> None:
             i += 1
             info_merch = await get_merch(id_merch=order.id_merch)
             info_user = await get_user(id_tg=order.id_tg)
-            text += f'{i}. {order.date_order} -{info_merch.title} за {info_merch.amount}TON заказал @{info_user.username} / {info_user.name}\n' \
+            text += f'{i}. {order.date_order} -{info_merch.title} за {info_merch.amount} TON заказал @{info_user.username} / {info_user.name}\n' \
                     f'Контактные данные: {order.address_delivery}\n\n'
-        if not i % 20:
-            await message.answer(text=text, parse_mode='html')
-            text = ''
+            print(i, i)
+            if not i % 20:
+                print(1)
+                await message.answer(text=text, parse_mode='html')
+                text = ''
     if not text == '':
+        print(2)
         await message.answer(text=text, parse_mode='html')
 
 
-@router.message(F.text == '/my_referal', lambda message: check_super_admin(message.chat.id))
+@router.message(F.text == '/my_referal')
 async def process_get_order_today(message: Message, state: FSMContext) -> None:
     """
     Получить все заказы за реферала
@@ -66,9 +69,9 @@ async def process_get_order_today(message: Message, state: FSMContext) -> None:
             i += 1
             info_merch = await get_merch(id_merch=order.id_merch)
             info_user = await get_user(id_tg=order.id_tg)
-            text += f'{i}. {order.date_order} - {info_merch.title} за {info_merch.amount}TON заказал @{info_user.username} / {info_user.name}\n'
-        if not i % 20:
-            await message.answer(text=text, parse_mode='html')
-            text = ''
+            text += f'{i}. {order.date_order} - {info_merch.title} за {info_merch.amount} TON заказал @{info_user.username} / {info_user.name}\n'
+            if not i % 20:
+                await message.answer(text=text, parse_mode='html')
+                text = ''
     if not text == '':
         await message.answer(text=text, parse_mode='html')
